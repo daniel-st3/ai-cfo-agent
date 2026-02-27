@@ -1,0 +1,201 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Apple-inspired light palette ────────────────────────────── */
+    --background:        #f5f5f7;   /* Apple site grey */
+    --foreground:        #1d1d1f;   /* Apple near-black */
+    --card:              #ffffff;
+    --card-foreground:   #1d1d1f;
+    --border:            #d2d2d7;   /* Apple subtle border */
+    --border-light:      #e8e8ed;
+    --muted:             #f5f5f7;
+    --muted-foreground:  #6e6e73;   /* Apple secondary label */
+    --accent:            #0071e3;   /* Apple blue */
+    --accent-foreground: #ffffff;
+    --destructive:       #ff3b30;   /* Apple red */
+    --success:           #34c759;   /* Apple green */
+    --warning:           #ff9500;   /* Apple orange */
+    --primary:           #1d1d1f;
+    --primary-foreground:#ffffff;
+    --ring:              #0071e3;
+    --radius:            0.875rem;
+
+    /* Chart palette — rich, readable on white */
+    --chart-1: #0071e3;   /* apple blue */
+    --chart-2: #34c759;   /* apple green */
+    --chart-3: #ff3b30;   /* apple red */
+    --chart-4: #ff9500;   /* apple orange */
+    --chart-5: #af52de;   /* apple purple */
+    --chart-6: #5ac8fa;   /* apple teal */
+
+    /* Recharts data-key color vars */
+    --color-mrr:        #0071e3;
+    --color-arr:        #6366f1;
+    --color-burn_rate:  #ff3b30;
+    --color-gross_margin:#34c759;
+    --color-churn_rate: #ff9500;
+    --color-cac:        #ff3b30;
+    --color-ltv:        #0071e3;
+    --color-bear:       #ff3b30;
+    --color-base:       #0071e3;
+    --color-bull:       #34c759;
+    --color-ruin_90d:   #ff3b30;
+    --color-ruin_180d:  #ff9500;
+    --color-ruin_365d:  #af52de;
+    --color-score:      #34c759;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                 var(--font-geist-sans), "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Monospace numbers — for KPI values */
+  .font-num {
+    font-family: "SF Mono", var(--font-geist-mono), ui-monospace, "Cascadia Code",
+                 "Fira Code", Consolas, monospace;
+    font-feature-settings: "tnum";
+  }
+}
+
+@layer utilities {
+  /* ── Scrollbar ─────────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #aeaeb2; }
+
+  /* ── Card surfaces ─────────────────────────────────────────────── */
+  /* Standard card — white, subtle shadow */
+  .card-surface {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  /* Slightly more prominent card */
+  .card-brutal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  /* Hero metric card */
+  .card-metric {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .card-metric:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+  }
+
+  /* Status dots */
+  .status-pending { @apply w-2 h-2 rounded-full bg-gray-300; }
+  .status-running { @apply w-2 h-2 rounded-full bg-blue-500 animate-pulse; }
+  .status-done    { @apply w-2 h-2 rounded-full bg-green-500; }
+
+  /* Section label */
+  .section-label {
+    @apply text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400;
+  }
+
+  /* Pill badge */
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide;
+  }
+  .pill-blue   { @apply pill bg-blue-50 text-blue-700 border border-blue-200; }
+  .pill-green  { @apply pill bg-green-50 text-green-700 border border-green-200; }
+  .pill-red    { @apply pill bg-red-50 text-red-600 border border-red-200; }
+  .pill-amber  { @apply pill bg-amber-50 text-amber-700 border border-amber-200; }
+  .pill-gray   { @apply pill bg-gray-100 text-gray-500 border border-gray-200; }
+
+  /* ── Recharts overrides for light theme ────────────────────────── */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: #f0f0f5 !important;
+  }
+  .recharts-text { fill: #8e8e93 !important; }
+  .recharts-tooltip-wrapper .recharts-default-tooltip {
+    background: #ffffff !important;
+    border: 1px solid #d2d2d7 !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
+  }
+
+  /* ── Fade-in animations ────────────────────────────────────────── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease forwards;
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease forwards;
+  }
+
+  /* Gradient text */
+  .text-gradient-blue {
+    background: linear-gradient(135deg, #0071e3 0%, #6366f1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Animated background blobs ─────────────────────────────────── */
+  @keyframes blob-drift {
+    0%,100% { transform: translate(0, 0) scale(1); }
+    25%      { transform: translate(24px, -40px) scale(1.06); }
+    50%      { transform: translate(-18px, 22px) scale(0.94); }
+    75%      { transform: translate(12px, 32px) scale(1.03); }
+  }
+  .bg-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    animation: blob-drift ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* ── Scroll-triggered section animations ──────────────────────── */
+  .section-enter {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+  }
+  .section-enter.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Stagger delays for cards within a section */
+  .stagger-1 { transition-delay: 60ms; }
+  .stagger-2 { transition-delay: 120ms; }
+  .stagger-3 { transition-delay: 180ms; }
+  .stagger-4 { transition-delay: 240ms; }
+  .stagger-5 { transition-delay: 300ms; }
+  .stagger-6 { transition-delay: 360ms; }
+  .stagger-7 { transition-delay: 420ms; }
+}

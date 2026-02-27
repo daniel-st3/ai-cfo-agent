@@ -1,0 +1,61 @@
+services:
+  - type: web
+    name: ai-cfo-agent-api
+    env: python
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /health
+    buildCommand: |
+      pip install poetry==1.8.5
+      poetry config virtualenvs.create false
+      pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu --quiet
+      poetry install --no-interaction --no-root --without dev
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 120 --workers 1
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: LITELLM_LOG
+        value: ERROR
+
+  - type: worker
+    name: ai-cfo-agent-worker
+    env: python
+    plan: starter
+    autoDeploy: true
+    buildCommand: |
+      pip install poetry==1.8.5
+      poetry config virtualenvs.create false
+      pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu --quiet
+      poetry install --no-interaction --no-root --without dev
+    startCommand: celery -A celery_worker.celery_app worker --loglevel=INFO --concurrency=2
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: API_BASE_URL
+        sync: false
+      - key: N8N_WEBHOOK_BASE_URL
+        sync: false
+
+  - type: web
+    name: ai-cfo-dashboard
+    env: python
+    plan: starter
+    autoDeploy: true
+    buildCommand: |
+      pip install poetry==1.8.5
+      poetry config virtualenvs.create false
+      poetry install --no-interaction --no-root --without dev
+    startCommand: streamlit run dashboard/streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: API_BASE_URL
+        sync: false

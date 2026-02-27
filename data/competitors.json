@@ -1,0 +1,49 @@
+[
+  {"name": "Notion",          "domain": "notion.so",            "sector": "saas_productivity",   "pricing_url": "https://www.notion.so/pricing",                       "wikipedia_title": "Notion_(productivity_software)"},
+  {"name": "Airtable",        "domain": "airtable.com",         "sector": "saas_productivity",   "pricing_url": "https://airtable.com/pricing",                        "wikipedia_title": "Airtable"},
+  {"name": "Monday.com",      "domain": "monday.com",           "sector": "saas_productivity",   "pricing_url": "https://monday.com/pricing",                          "wikipedia_title": "Monday.com"},
+  {"name": "ClickUp",         "domain": "clickup.com",          "sector": "saas_productivity",   "pricing_url": "https://clickup.com/pricing",                         "wikipedia_title": "ClickUp"},
+  {"name": "Asana",           "domain": "asana.com",            "sector": "saas_productivity",   "pricing_url": "https://asana.com/pricing",                           "wikipedia_title": "Asana,_Inc."},
+
+  {"name": "Stripe",          "domain": "stripe.com",           "sector": "fintech_payments",    "pricing_url": null,                                                  "wikipedia_title": "Stripe,_Inc."},
+  {"name": "Square",          "domain": "squareup.com",         "sector": "fintech_payments",    "pricing_url": null,                                                  "wikipedia_title": "Block,_Inc."},
+  {"name": "Adyen",           "domain": "adyen.com",            "sector": "fintech_payments",    "pricing_url": null,                                                  "wikipedia_title": "Adyen"},
+  {"name": "Braintree",       "domain": "braintreepayments.com","sector": "fintech_payments",    "pricing_url": null,                                                  "wikipedia_title": "Braintree_(company)"},
+  {"name": "Razorpay",        "domain": "razorpay.com",         "sector": "fintech_payments",    "pricing_url": null,                                                  "wikipedia_title": "Razorpay"},
+
+  {"name": "Shopify",         "domain": "shopify.com",          "sector": "ecommerce",           "pricing_url": "https://www.shopify.com/pricing",                     "wikipedia_title": "Shopify"},
+  {"name": "BigCommerce",     "domain": "bigcommerce.com",      "sector": "ecommerce",           "pricing_url": "https://www.bigcommerce.com/essentials/pricing/",     "wikipedia_title": "BigCommerce"},
+  {"name": "WooCommerce",     "domain": "woocommerce.com",      "sector": "ecommerce",           "pricing_url": null,                                                  "wikipedia_title": "WooCommerce"},
+  {"name": "Wix",             "domain": "wix.com",              "sector": "ecommerce",           "pricing_url": "https://www.wix.com/upgrade/website",                 "wikipedia_title": "Wix.com"},
+  {"name": "Squarespace",     "domain": "squarespace.com",      "sector": "ecommerce",           "pricing_url": "https://www.squarespace.com/pricing",                 "wikipedia_title": "Squarespace"},
+
+  {"name": "Workday",         "domain": "workday.com",          "sector": "hr_tech",             "pricing_url": null,                                                  "wikipedia_title": "Workday,_Inc."},
+  {"name": "BambooHR",        "domain": "bamboohr.com",         "sector": "hr_tech",             "pricing_url": null,                                                  "wikipedia_title": "BambooHR"},
+  {"name": "Rippling",        "domain": "rippling.com",         "sector": "hr_tech",             "pricing_url": null,                                                  "wikipedia_title": "Rippling_(software)"},
+  {"name": "Gusto",           "domain": "gusto.com",            "sector": "hr_tech",             "pricing_url": "https://gusto.com/product/pricing",                   "wikipedia_title": "Gusto_(company)"},
+  {"name": "Lattice",         "domain": "lattice.com",          "sector": "hr_tech",             "pricing_url": null,                                                  "wikipedia_title": "Lattice_(company)"},
+
+  {"name": "HubSpot",         "domain": "hubspot.com",          "sector": "marketing_automation","pricing_url": "https://www.hubspot.com/pricing",                     "wikipedia_title": "HubSpot"},
+  {"name": "Klaviyo",         "domain": "klaviyo.com",          "sector": "marketing_automation","pricing_url": "https://www.klaviyo.com/pricing",                     "wikipedia_title": "Klaviyo"},
+  {"name": "Mailchimp",       "domain": "mailchimp.com",        "sector": "marketing_automation","pricing_url": "https://mailchimp.com/pricing/",                      "wikipedia_title": "Mailchimp"},
+  {"name": "ActiveCampaign",  "domain": "activecampaign.com",   "sector": "marketing_automation","pricing_url": "https://www.activecampaign.com/pricing",              "wikipedia_title": "ActiveCampaign"},
+  {"name": "Braze",           "domain": "braze.com",            "sector": "marketing_automation","pricing_url": null,                                                  "wikipedia_title": "Braze_(company)"},
+
+  {"name": "GitHub",          "domain": "github.com",           "sector": "devtools",            "pricing_url": "https://github.com/pricing",                          "wikipedia_title": "GitHub"},
+  {"name": "GitLab",          "domain": "gitlab.com",           "sector": "devtools",            "pricing_url": "https://about.gitlab.com/pricing/",                   "wikipedia_title": "GitLab"},
+  {"name": "Atlassian",       "domain": "atlassian.com",        "sector": "devtools",            "pricing_url": "https://www.atlassian.com/software/jira/pricing",     "wikipedia_title": "Atlassian"},
+  {"name": "Linear",          "domain": "linear.app",           "sector": "devtools",            "pricing_url": "https://linear.app/pricing",                          "wikipedia_title": "Linear_(software)"},
+  {"name": "Vercel",          "domain": "vercel.com",           "sector": "devtools",            "pricing_url": "https://vercel.com/pricing",                          "wikipedia_title": "Vercel"},
+
+  {"name": "OpenAI",          "domain": "openai.com",           "sector": "ai_saas",             "pricing_url": "https://openai.com/pricing",                          "wikipedia_title": "OpenAI"},
+  {"name": "Anthropic",       "domain": "anthropic.com",        "sector": "ai_saas",             "pricing_url": null,                                                  "wikipedia_title": "Anthropic"},
+  {"name": "Cohere",          "domain": "cohere.com",           "sector": "ai_saas",             "pricing_url": "https://cohere.com/pricing",                          "wikipedia_title": "Cohere_(company)"},
+  {"name": "Mistral AI",      "domain": "mistral.ai",           "sector": "ai_saas",             "pricing_url": "https://mistral.ai/technology/#pricing",              "wikipedia_title": "Mistral_AI"},
+  {"name": "Hugging Face",    "domain": "huggingface.co",       "sector": "ai_saas",             "pricing_url": "https://huggingface.co/pricing",                      "wikipedia_title": "Hugging_Face"},
+
+  {"name": "Salesforce",      "domain": "salesforce.com",       "sector": "general",             "pricing_url": null,                                                  "wikipedia_title": "Salesforce"},
+  {"name": "Zendesk",         "domain": "zendesk.com",          "sector": "general",             "pricing_url": "https://www.zendesk.com/pricing/",                    "wikipedia_title": "Zendesk"},
+  {"name": "Intercom",        "domain": "intercom.com",         "sector": "general",             "pricing_url": "https://www.intercom.com/pricing",                    "wikipedia_title": "Intercom_(company)"},
+  {"name": "Twilio",          "domain": "twilio.com",           "sector": "general",             "pricing_url": "https://www.twilio.com/en-us/pricing",                "wikipedia_title": "Twilio"},
+  {"name": "Slack",           "domain": "slack.com",            "sector": "general",             "pricing_url": "https://slack.com/intl/en-us/pricing",                "wikipedia_title": "Slack_(software)"}
+]
