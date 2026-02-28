@@ -52,7 +52,7 @@ export function RuinProbabilityChart({ survival }: Props) {
                 </div>
                 {pct >= 20 && (
                   <div className={`text-[10px] font-semibold mt-1 ${textColor}`}>
-                    HIGH RISK — fundraising required
+                    HIGH RISK: fundraising required
                   </div>
                 )}
               </div>

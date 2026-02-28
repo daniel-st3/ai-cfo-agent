@@ -13,7 +13,7 @@ import { RuinProbabilityChart }          from "@/components/charts/ruin-probabil
 import { GrossMarginChart }              from "@/components/charts/gross-margin";
 import { ChurnTrendChart }               from "@/components/charts/churn-trend";
 import { MonteCarloFan }                 from "@/components/charts/monte-carlo-fan";
-import { AnomalyTable }                  from "@/components/anomaly-table";
+import { AnomalyMLPanel }               from "@/components/anomaly-ml-panel";
 import { MarketIntelligence }            from "@/components/market-intelligence";
 import { RunwayClock }                   from "@/components/runway-clock";
 import { BoardPrep }                     from "@/components/board-prep";
@@ -107,6 +107,9 @@ export default function RunPage() {
 
   /* ── Modal state ─────────────────────────────────────────────── */
   const [showIntegrationsModal, setShowIntegrationsModal] = useState(false);
+
+  /* ── AI Intelligence Center active tool ─────────────────────── */
+  const [activeAITool, setActiveAITool] = useState<string>("board_qa");
 
   /* ── Scroll progress bar ─────────────────────────────────────── */
   useEffect(() => {
@@ -348,7 +351,7 @@ export default function RunPage() {
               {loading ? <Skel h="h-80" /> : survival
                 ? <SurvivalRadialChart survival={survival} />
                 : <div className="card-brutal flex flex-col items-center justify-center h-80 gap-3 text-center p-6">
-                    <div className="text-5xl font-bold text-gray-200">—</div>
+                    <div className="text-5xl font-bold text-gray-200">?</div>
                     <p className="text-xs text-gray-400">Run via upload page to compute survival.</p>
                   </div>}
             </div>
@@ -397,7 +400,7 @@ export default function RunPage() {
                 <ChurnTrendChart  snapshots={snapshots} />
                 {survival
                   ? <RuinProbabilityChart survival={survival} />
-                  : <div className="card-brutal flex items-center justify-center h-64 text-gray-400 text-sm">Ruin data unavailable</div>}
+                  : <div className="card-brutal flex items-center justify-center h-full min-h-[250px] text-gray-400 text-sm">Ruin data unavailable</div>}
                 <DeferredRevenueCard runId={runId} />
               </>
             )}
@@ -407,125 +410,287 @@ export default function RunPage() {
         {/* 9 · ANOMALY DETECTION ──────────────────────────────────── */}
         <section className="section-enter">
           <SectionHeading label="Anomaly Detection"
-            sub={anomalies.length > 0 ? `${highAnomalies} HIGH severity · IsolationForest ML model` : "All metrics within expected ranges"} />
-          {loading ? <Skel h="h-48" /> : <AnomalyTable anomalies={anomalies} />}
+            sub={anomalies.length > 0 ? `${highAnomalies} HIGH severity · IsolationForest ML · feature importance + detection timeline` : "All metrics within expected ranges"} />
+          {loading ? <Skel h="h-48" /> : <AnomalyMLPanel anomalies={anomalies} snapshotCount={snapshots.length} />}
         </section>
 
         {/* 10 · AI INTELLIGENCE CENTER ─────────────────────────────── */}
         {!loading && (
           <section className="section-enter">
             <SectionHeading label="AI Intelligence Center"
-              sub="Board Q&A · CFO Report · VC Verdict · Investor Update · Board Deck · Claude Haiku · ~$0.003/call" />
+              sub="Select a tool · generate your output · Claude Haiku · ~$0.003/call" />
 
-            {/* 5-card generator grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6 items-stretch">
+            <div className="card-brutal overflow-hidden">
+              <div className="flex min-h-[520px]">
 
-              {/* Board Q&A */}
-              <div className="card-brutal p-5 flex flex-col gap-3 h-full">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <Zap className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-gray-900">Board Q&A</div>
-                    <div className="text-[10px] text-gray-400">Adversarial prep</div>
-                  </div>
+                {/* ── Left sidebar: tool selector ────────────────────── */}
+                <div className="w-52 flex-shrink-0 border-r border-gray-100 bg-gray-50/50 flex flex-col">
+                  {[
+                    {
+                      id: "board_qa",
+                      icon: <Zap className="h-4 w-4" />,
+                      title: "Board Q&A",
+                      sub: "Adversarial prep",
+                      color: "text-blue-600",
+                      bg: "bg-blue-50",
+                      generated: !!boardQs,
+                      loading: boardLoading,
+                    },
+                    {
+                      id: "cfo_report",
+                      icon: <FileText className="h-4 w-4" />,
+                      title: "CFO Report",
+                      sub: "Full briefing",
+                      color: "text-gray-600",
+                      bg: "bg-gray-100",
+                      generated: !!report,
+                      loading: reportLoading,
+                    },
+                    {
+                      id: "vc_verdict",
+                      icon: <Scale className="h-4 w-4" />,
+                      title: "VC Verdict",
+                      sub: "PASS / WATCH / INVEST",
+                      color: "text-amber-600",
+                      bg: "bg-amber-50",
+                      generated: !!vcMemo,
+                      loading: vcMemoLoading,
+                      disabled: !survival,
+                    },
+                    {
+                      id: "investor_update",
+                      icon: <Mail className="h-4 w-4" />,
+                      title: "Investor Update",
+                      sub: "Copy-paste email",
+                      color: "text-blue-500",
+                      bg: "bg-blue-50",
+                      generated: !!investorUpdate,
+                      loading: investorUpdateLoading,
+                      disabled: !survival,
+                    },
+                    {
+                      id: "board_deck",
+                      icon: <FileText className="h-4 w-4" />,
+                      title: "Board Deck",
+                      sub: "10-slide PowerPoint",
+                      color: "text-purple-600",
+                      bg: "bg-purple-50",
+                      generated: false,
+                      loading: false,
+                    },
+                  ].map(tool => (
+                    <button
+                      key={tool.id}
+                      onClick={() => setActiveAITool(tool.id)}
+                      disabled={tool.disabled}
+                      className={`flex items-center gap-3 px-4 py-4 text-left transition-all border-b border-gray-100 last:border-0 disabled:opacity-40 disabled:cursor-not-allowed
+                        ${activeAITool === tool.id
+                          ? "border-l-4 border-l-blue-600 bg-white shadow-sm"
+                          : "border-l-4 border-l-transparent hover:bg-white/60"}`}
+                    >
+                      <div className={`h-8 w-8 rounded-xl flex items-center justify-center flex-shrink-0 ${tool.bg} ${tool.color}`}>
+                        {tool.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : tool.icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-gray-900 truncate">{tool.title}</div>
+                        <div className="text-[10px] text-gray-400 truncate">{tool.sub}</div>
+                      </div>
+                      {tool.generated && (
+                        <span className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0" title="Generated" />
+                      )}
+                    </button>
+                  ))}
                 </div>
-                <p className="text-[11px] text-gray-500 leading-snug flex-1">
-                  Generates tough investor questions with pre-drafted CFO answers.
-                </p>
-                <div className="flex items-center justify-between mt-auto">
-                  <span className="text-[10px] text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">~$0.005 · Haiku</span>
-                  <button onClick={handleBoardPrep} disabled={boardLoading || loading}
-                    className="flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-[11px] font-semibold hover:bg-blue-500 disabled:opacity-40 transition-colors">
-                    {boardLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-                    {boardLoading ? "…" : boardQs ? "Regenerate" : "Generate"}
-                  </button>
+
+                {/* ── Right panel: tool output ───────────────────────── */}
+                <div className="flex-1 min-w-0 p-6 overflow-auto" key={activeAITool}>
+
+                  {activeAITool === "board_qa" && (
+                    <div className="h-full flex flex-col">
+                      {boardQs ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h3 className="text-base font-bold text-gray-900">Board Q&A</h3>
+                              <p className="text-xs text-gray-400 mt-0.5">{boardQs.length} adversarial questions with CFO answers</p>
+                            </div>
+                            <button onClick={handleBoardPrep} disabled={boardLoading}
+                              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 px-3 py-1.5 text-xs font-semibold hover:border-gray-300 disabled:opacity-40 transition-colors">
+                              {boardLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                              Regenerate
+                            </button>
+                          </div>
+                          <BoardPrep questions={boardQs} />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full gap-6 py-12">
+                          <div className="h-16 w-16 rounded-2xl bg-blue-50 flex items-center justify-center">
+                            <Zap className="h-8 w-8 text-blue-500" />
+                          </div>
+                          <div className="text-center max-w-sm">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Board Q&A</h3>
+                            <p className="text-sm text-gray-500 leading-relaxed mb-1">
+                              Generates the 10 toughest investor questions your board will ask, with pre-drafted CFO answers grounded in your actual KPIs.
+                            </p>
+                            <p className="text-[11px] text-gray-400">Perfect for board meeting prep and Series A due diligence.</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-3 py-1">~$0.005 · Claude Haiku</span>
+                            <button onClick={handleBoardPrep} disabled={boardLoading}
+                              className="flex items-center gap-2 rounded-xl bg-blue-600 text-white px-5 py-2.5 text-sm font-semibold hover:bg-blue-500 disabled:opacity-40 transition-colors shadow-sm shadow-blue-200">
+                              {boardLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                              {boardLoading ? "Generating…" : "Generate Board Q&A"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeAITool === "cfo_report" && (
+                    <div className="h-full flex flex-col">
+                      {report ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h3 className="text-base font-bold text-gray-900">CFO Report</h3>
+                              <p className="text-xs text-gray-400 mt-0.5">Executive briefing with market snapshot and recommendations</p>
+                            </div>
+                            <button onClick={handleReport} disabled={reportLoading}
+                              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 px-3 py-1.5 text-xs font-semibold hover:border-gray-300 disabled:opacity-40 transition-colors">
+                              {reportLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
+                              Regenerate
+                            </button>
+                          </div>
+                          <CFOReport report={report} />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full gap-6 py-12">
+                          <div className="h-16 w-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+                            <FileText className="h-8 w-8 text-gray-500" />
+                          </div>
+                          <div className="text-center max-w-sm">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">CFO Report</h3>
+                            <p className="text-sm text-gray-500 leading-relaxed mb-1">
+                              A full executive briefing covering financial health, top anomalies, market signals, and 3 specific recommendations.
+                            </p>
+                            <p className="text-[11px] text-gray-400">Written at CFO level, ready to paste into a board deck or send to investors.</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-3 py-1">~$0.005 · Claude Haiku</span>
+                            <button onClick={handleReport} disabled={reportLoading}
+                              className="flex items-center gap-2 rounded-xl bg-gray-900 text-white px-5 py-2.5 text-sm font-semibold hover:bg-gray-700 disabled:opacity-40 transition-colors">
+                              {reportLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                              {reportLoading ? "Generating…" : "Generate CFO Report"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeAITool === "vc_verdict" && (
+                    <div className="h-full flex flex-col">
+                      {vcMemo ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h3 className="text-base font-bold text-gray-900">VC Verdict</h3>
+                              <p className="text-xs text-gray-400 mt-0.5">Internal IC memo: PASS / WATCH / INVEST</p>
+                            </div>
+                            <button onClick={handleVCMemo} disabled={vcMemoLoading || !survival}
+                              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 px-3 py-1.5 text-xs font-semibold hover:border-gray-300 disabled:opacity-40 transition-colors">
+                              {vcMemoLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Scale className="h-3 w-3" />}
+                              Regenerate
+                            </button>
+                          </div>
+                          <VCMemo memo={vcMemo} />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full gap-6 py-12">
+                          <div className="h-16 w-16 rounded-2xl bg-amber-50 flex items-center justify-center">
+                            <Scale className="h-8 w-8 text-amber-500" />
+                          </div>
+                          <div className="text-center max-w-sm">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">VC Verdict</h3>
+                            <p className="text-sm text-gray-500 leading-relaxed mb-1">
+                              The internal IC memo a top-tier VC partner would write about your company. Brutally honest: PASS, WATCH, or INVEST.
+                            </p>
+                            <p className="text-[11px] text-gray-400">Includes red flags, what would change the verdict, and comparable deals.</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-3 py-1">~$0.003 · Claude Haiku</span>
+                            <button onClick={handleVCMemo} disabled={vcMemoLoading || !survival}
+                              className="flex items-center gap-2 rounded-xl bg-amber-500 text-white px-5 py-2.5 text-sm font-semibold hover:bg-amber-400 disabled:opacity-40 transition-colors shadow-sm shadow-amber-200">
+                              {vcMemoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scale className="h-4 w-4" />}
+                              {vcMemoLoading ? "Generating…" : "Generate VC Verdict"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeAITool === "investor_update" && (
+                    <div className="h-full flex flex-col">
+                      {investorUpdate ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h3 className="text-base font-bold text-gray-900">Investor Update</h3>
+                              <p className="text-xs text-gray-400 mt-0.5">Monthly email, copy-paste ready</p>
+                            </div>
+                            <button onClick={handleInvestorUpdate} disabled={investorUpdateLoading || !survival}
+                              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 px-3 py-1.5 text-xs font-semibold hover:border-gray-300 disabled:opacity-40 transition-colors">
+                              {investorUpdateLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />}
+                              Regenerate
+                            </button>
+                          </div>
+                          <InvestorUpdate update={investorUpdate} companyName={companyName} />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full gap-6 py-12">
+                          <div className="h-16 w-16 rounded-2xl bg-blue-50 flex items-center justify-center">
+                            <Mail className="h-8 w-8 text-blue-500" />
+                          </div>
+                          <div className="text-center max-w-sm">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Investor Update</h3>
+                            <p className="text-sm text-gray-500 leading-relaxed mb-1">
+                              A professional monthly investor update email grounded in your actual MRR, burn rate, runway, and key milestones.
+                            </p>
+                            <p className="text-[11px] text-gray-400">Tone-matched to your sector, ready to send in 30 seconds.</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-3 py-1">~$0.003 · Claude Haiku</span>
+                            <button onClick={handleInvestorUpdate} disabled={investorUpdateLoading || !survival}
+                              className="flex items-center gap-2 rounded-xl bg-blue-600 text-white px-5 py-2.5 text-sm font-semibold hover:bg-blue-500 disabled:opacity-40 transition-colors shadow-sm shadow-blue-200">
+                              {investorUpdateLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                              {investorUpdateLoading ? "Generating…" : "Generate Investor Update"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeAITool === "board_deck" && (
+                    <div className="flex flex-col items-center justify-center h-full gap-6 py-12">
+                      <div className="h-16 w-16 rounded-2xl bg-purple-50 flex items-center justify-center">
+                        <FileText className="h-8 w-8 text-purple-500" />
+                      </div>
+                      <div className="text-center max-w-sm">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Board Deck</h3>
+                        <p className="text-sm text-gray-500 leading-relaxed mb-1">
+                          A 10-slide PowerPoint deck with your KPIs, cash flow chart, unit economics, anomalies, scenarios, and fundraising status.
+                        </p>
+                        <p className="text-[11px] text-gray-400">Generated with python-pptx · No design tool required.</p>
+                      </div>
+                      <BoardDeckDownload runId={runId} companyName={companyName} />
+                    </div>
+                  )}
+
                 </div>
               </div>
-
-              {/* CFO Report */}
-              <div className="card-brutal p-5 flex flex-col gap-3 h-full">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <FileText className="h-4 w-4 text-gray-600" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-gray-900">CFO Report</div>
-                    <div className="text-[10px] text-gray-400">Full briefing</div>
-                  </div>
-                </div>
-                <p className="text-[11px] text-gray-500 leading-snug flex-1">
-                  Executive briefing with market snapshot, risks, and recommendations.
-                </p>
-                <div className="flex items-center justify-between mt-auto">
-                  <span className="text-[10px] text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">~$0.005 · Haiku</span>
-                  <button onClick={handleReport} disabled={reportLoading || loading}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 px-3 py-1.5 text-[11px] font-semibold hover:border-gray-300 disabled:opacity-40 transition-colors">
-                    {reportLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
-                    {reportLoading ? "…" : report ? "Regenerate" : "Generate"}
-                  </button>
-                </div>
-              </div>
-
-              {/* VC Verdict */}
-              <div className={`card-brutal p-5 flex flex-col gap-3 h-full ${!survival ? "opacity-50" : ""}`}>
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <Scale className="h-4 w-4 text-amber-600" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-gray-900">VC Verdict</div>
-                    <div className="text-[10px] text-gray-400">PASS / WATCH / INVEST</div>
-                  </div>
-                </div>
-                <p className="text-[11px] text-gray-500 leading-snug flex-1">
-                  Internal IC memo a top-tier VC would write. Brutally honest.
-                </p>
-                <div className="flex items-center justify-between mt-auto">
-                  <span className="text-[10px] text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">~$0.003 · Haiku</span>
-                  <button onClick={handleVCMemo} disabled={vcMemoLoading || !survival}
-                    className="flex items-center gap-1.5 rounded-lg bg-amber-500 text-white px-3 py-1.5 text-[11px] font-semibold hover:bg-amber-400 disabled:opacity-40 transition-colors">
-                    {vcMemoLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Scale className="h-3 w-3" />}
-                    {vcMemoLoading ? "…" : vcMemo ? "Regenerate" : "Generate"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Investor Update */}
-              <div className={`card-brutal p-5 flex flex-col gap-3 h-full ${!survival ? "opacity-50" : ""}`}>
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                    <Mail className="h-4 w-4 text-blue-500" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-gray-900">Investor Update</div>
-                    <div className="text-[10px] text-gray-400">Copy-paste ready email</div>
-                  </div>
-                </div>
-                <p className="text-[11px] text-gray-500 leading-snug flex-1">
-                  Monthly investor email grounded in your actual MRR, burn, and runway.
-                </p>
-                <div className="flex items-center justify-between mt-auto">
-                  <span className="text-[10px] text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">~$0.003 · Haiku</span>
-                  <button onClick={handleInvestorUpdate} disabled={investorUpdateLoading || !survival}
-                    className="flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-[11px] font-semibold hover:bg-blue-500 disabled:opacity-40 transition-colors">
-                    {investorUpdateLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />}
-                    {investorUpdateLoading ? "…" : investorUpdate ? "Regenerate" : "Generate"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Board Deck */}
-              <BoardDeckDownload runId={runId} companyName={companyName} />
-            </div>
-
-            {/* Generated outputs — full-width panels */}
-            <div className="space-y-6">
-              {boardQs        && <BoardPrep questions={boardQs} />}
-              {report         && <CFOReport report={report} />}
-              {vcMemo         && <VCMemo memo={vcMemo} />}
-              {investorUpdate && <InvestorUpdate update={investorUpdate} companyName={companyName} />}
             </div>
           </section>
         )}

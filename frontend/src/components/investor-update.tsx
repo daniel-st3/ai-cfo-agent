@@ -33,7 +33,7 @@ export function InvestorUpdate({ update, companyName }: Props) {
     ``,
     update.closing,
     ``,
-    `— ${companyName || "Founder"}`,
+    `${companyName || "Founder"}`,
   ].join("\n");
 
   const handleCopy = async () => {
@@ -154,7 +154,7 @@ export function InvestorUpdate({ update, companyName }: Props) {
 
         <div className="pt-2 border-t border-gray-100">
           <p className="text-sm text-gray-600">{update.closing}</p>
-          <p className="text-sm font-semibold text-gray-900 mt-1">— {companyName || "Founder"}</p>
+          <p className="text-sm font-semibold text-gray-900 mt-1">{companyName || "Founder"}</p>
         </div>
       </div>
 

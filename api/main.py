@@ -7,6 +7,8 @@ load_dotenv()
 import asyncio
 import tomllib
 import uuid
+from datetime import date
+from decimal import Decimal
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Callable
@@ -128,6 +130,14 @@ def create_app(
     async def root():
         return RedirectResponse(url="/docs")
 
+    @app.get("/sample-csv", include_in_schema=False)
+    async def sample_csv_download():
+        """Download the built-in sample CSV for format reference."""
+        csv_path = _PROJECT_ROOT / "data" / "sample_financials.csv"
+        if not csv_path.exists():
+            raise HTTPException(status_code=404, detail="Sample CSV not found")
+        return FileResponse(str(csv_path), filename="ai-cfo-sample.csv", media_type="text/csv")
+
     # ── Sync endpoints ────────────────────────────────────────────────────────
 
     @app.post("/analyze", response_model=AnalyzeResponse)
@@ -185,6 +195,42 @@ def create_app(
             )
         except Exception as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+        # Seed demo deferred revenue contracts so the dashboard shows real data
+        try:
+            from datetime import timedelta
+            run_id_uuid = uuid.UUID(str(result["run_id"]))
+            today = date.today()
+            db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+            async with db_manager.session() as session:
+                demo_contracts = [
+                    Contract(
+                        run_id=run_id_uuid, customer_id="acme_enterprise",
+                        total_value=Decimal("120000"),
+                        start_date=today - timedelta(days=180),
+                        end_date=today + timedelta(days=185),
+                        payment_terms="annual",
+                    ),
+                    Contract(
+                        run_id=run_id_uuid, customer_id="bigco_corp",
+                        total_value=Decimal("84000"),
+                        start_date=today - timedelta(days=90),
+                        end_date=today + timedelta(days=275),
+                        payment_terms="annual",
+                    ),
+                    Contract(
+                        run_id=run_id_uuid, customer_id="series_a_startup",
+                        total_value=Decimal("60000"),
+                        start_date=today - timedelta(days=30),
+                        end_date=today + timedelta(days=335),
+                        payment_terms="quarterly",
+                    ),
+                ]
+                session.add_all(demo_contracts)
+                await session.commit()
+                await DeferredRevenueCalculator().run(session, run_id_uuid)
+        except Exception:
+            pass  # Non-fatal — dashboard degrades gracefully if seeding fails
 
         return AnalyzeResponse(
             run_id=result["run_id"],

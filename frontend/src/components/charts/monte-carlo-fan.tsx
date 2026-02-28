@@ -145,8 +145,8 @@ export function MonteCarloFan({ snapshots, scenarios, latestMRR }: Props) {
 
         <div className="flex items-center gap-3 flex-wrap justify-end">
           {[
-            { w: 24, h: 8,   fill: "#6366f1", opacity: 0.14, label: "P5–P95"   },
-            { w: 24, h: 8,   fill: "#0071e3", opacity: 0.28, label: "P25–P75"  },
+            { w: 24, h: 8,   fill: "#6366f1", opacity: 0.14, label: "P5 to P95"   },
+            { w: 24, h: 8,   fill: "#0071e3", opacity: 0.28, label: "P25 to P75"  },
             { w: 24, h: 2.5, fill: "#0071e3", opacity: 1.0,  label: "Median"   },
             { w: 24, h: 1,   fill: "#6366f1", opacity: 0.35, label: "Sim path" },
           ].map(({ w, h, fill, opacity, label }) => (
@@ -280,7 +280,7 @@ export function MonteCarloFan({ snapshots, scenarios, latestMRR }: Props) {
       </div>
 
       <div className="mt-2.5 flex items-center justify-between text-[10px] text-gray-400">
-        <span>Shaded = P5–P95 probability envelope · inner band = P25–P75</span>
+        <span>Shaded = P5 to P95 probability envelope · inner band = P25 to P75</span>
         <span>Bold line = P50 median · {N_SIM.toLocaleString()} Monte Carlo paths</span>
       </div>
     </div>

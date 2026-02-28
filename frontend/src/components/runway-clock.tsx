@@ -86,7 +86,7 @@ export function RunwayClock({ monthsRunway, latestBurn = 0, latestMRR = 0 }: Pro
       {/* What-if sliders */}
       <div className="border-t border-black/5 pt-4 space-y-4">
         <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 text-center mb-3">
-          ── What if you... ──
+          What if you...
         </div>
 
         {/* Burn slider */}
@@ -146,13 +146,13 @@ export function RunwayClock({ monthsRunway, latestBurn = 0, latestMRR = 0 }: Pro
       {isRed && (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-100/60 px-4 py-2.5 text-xs text-red-700 font-semibold flex items-start gap-2">
           <span className="text-base flex-shrink-0">⚡</span>
-          <span>Critical — less than 90 days at current burn. Use the sliders above to model emergency scenarios, then act immediately.</span>
+          <span>Critical: less than 90 days at current burn. Use the sliders above to model emergency scenarios, then act immediately.</span>
         </div>
       )}
       {isAmber && (
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-100/60 px-4 py-2.5 text-xs text-amber-700 font-semibold flex items-start gap-2">
           <span className="text-base flex-shrink-0">⚠</span>
-          <span>Caution — begin fundraising conversations within 60 days. Drag the sliders to explore your options.</span>
+          <span>Caution: begin fundraising conversations within 60 days. Drag the sliders to explore your options.</span>
         </div>
       )}
       {isGreen && (

@@ -371,4 +371,34 @@
     animation: livePing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
   .live-dot { position: relative; display: inline-block; }
+
+  /* ── Landing page floating blob animations ───────────────────────── */
+  @keyframes float1 {
+    0%,100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(40px, -30px) scale(1.08); }
+    66%      { transform: translate(-20px, 20px) scale(0.95); }
+  }
+  @keyframes float2 {
+    0%,100% { transform: translate(0, 0) scale(1); }
+    40%      { transform: translate(-35px, 45px) scale(1.06); }
+    70%      { transform: translate(25px, -15px) scale(0.97); }
+  }
+  @keyframes float3 {
+    0%,100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(30px, 30px) scale(1.1); }
+  }
+  @keyframes float4 {
+    0%,100% { transform: translate(0, 0) scale(1); }
+    45%      { transform: translate(-25px, -35px) scale(0.93); }
+  }
+  .float-1 { animation: float1 10s ease-in-out infinite; }
+  .float-2 { animation: float2 13s ease-in-out infinite; }
+  .float-3 { animation: float3  9s ease-in-out infinite; }
+  .float-4 { animation: float4 11s ease-in-out infinite; }
+
+  /* ── Dot-grid background overlay ────────────────────────────────── */
+  .bg-grid {
+    background-image: radial-gradient(circle, rgba(0,0,0,0.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
 }

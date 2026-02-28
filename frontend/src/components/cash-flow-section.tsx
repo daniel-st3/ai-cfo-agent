@@ -147,7 +147,7 @@ export function CashFlowSection({ runId }: Props) {
               className="group w-full text-left"
             >
               <div className="text-2xl font-black tabular-nums text-gray-900">
-                {data ? fmtK(data.current_cash) : "—"}
+                {data ? fmtK(data.current_cash) : "..."}
               </div>
               <div className="text-[9px] text-gray-400 group-hover:text-blue-500 transition-colors">
                 {data ? "estimated" : ""} · click to update
@@ -162,7 +162,7 @@ export function CashFlowSection({ runId }: Props) {
             <TrendingDown className="h-3 w-3 text-red-400" /> Committed weekly
           </div>
           <div className="text-lg font-bold text-red-500 tabular-nums">
-            {data ? fmtK(data.total_committed_weekly) : "—"}
+            {data ? fmtK(data.total_committed_weekly) : "..."}
           </div>
           <div className="text-[9px] text-gray-400">recurring outflows</div>
         </div>

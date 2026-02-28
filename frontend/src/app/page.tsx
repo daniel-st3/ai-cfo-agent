@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { useMouse } from "@/hooks/use-mouse";
 import {
   Sparkles, Zap, ArrowRight, AlertCircle, TrendingUp,
-  BarChart3, Shield, Brain, Upload, ChevronDown, Lock,
+  BarChart3, Shield, Brain, ChevronDown, Lock,
   CreditCard, BookOpen, Plug, CheckCircle2,
+  FileSpreadsheet, FileText, Info, Download,
 } from "lucide-react";
 import { UploadZone } from "@/components/upload-zone";
 import { PipelineView, PIPELINE_STEPS, type StepId } from "@/components/pipeline-view";
@@ -72,7 +73,7 @@ export default function HomePage() {
   const router = useRouter();
   const mouse  = useMouse();
   const [phase, setPhase]               = useState<Phase>("idle");
-  const [file,  setFile]                = useState<File | null>(null);
+  const [files, setFiles]               = useState<File[]>([]);
   const [companyName, setCompanyName]   = useState("");
   const [sector, setSector]             = useState<SectorId>("saas_productivity");
   const [error,  setError]              = useState<string | null>(null);
@@ -85,12 +86,12 @@ export default function HomePage() {
 
   const companyNameRef = useRef(companyName);
   const sectorRef      = useRef(sector);
-  const fileRef        = useRef(file);
+  const filesRef       = useRef(files);
   const timersRef      = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => { companyNameRef.current = companyName; }, [companyName]);
   useEffect(() => { sectorRef.current      = sector; },      [sector]);
-  useEffect(() => { fileRef.current        = file; },        [file]);
+  useEffect(() => { filesRef.current       = files; },       [files]);
 
   // Cleanup timers on unmount
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); }, []);
@@ -119,9 +120,9 @@ export default function HomePage() {
   ) => {
     const cn = companyNameRef.current || "Acme SaaS Co.";
     const sc = sectorRef.current;
-    const f  = fileRef.current;
+    const ff = filesRef.current;
 
-    if (!isDemo && !f) {
+    if (!isDemo && ff.length === 0) {
       setError("Please select a file first.");
       return;
     }
@@ -152,7 +153,7 @@ export default function HomePage() {
     try {
       const result: AnalyzeResponse = isDemo
         ? await runDemoSync(cn, sc)
-        : await runAnalysisSync(f!, cn, sc);
+        : await runAnalysisSync(ff[0]!, cn, sc);
 
       timersRef.current.forEach(clearTimeout);
       timersRef.current = [];
@@ -227,27 +228,40 @@ export default function HomePage() {
   const isRunning = phase === "pipeline" || phase === "celebrating";
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: "linear-gradient(180deg, #ffffff 0%, #f5f5f7 60%)" }}>
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: "linear-gradient(180deg, #ffffff 0%, #f5f5f7 70%)" }}>
+
+      {/* ── Dot-grid background ───────────────────────────────────────────── */}
+      <div className="pointer-events-none fixed inset-0 bg-grid opacity-100" aria-hidden />
 
       {/* ── Animated gradient blobs + mouse parallax ─────────────────────── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        <div className="bg-blob" style={{
+        <div className="float-1" style={{
+          position: "absolute", borderRadius: "50%", filter: "blur(100px)",
           width: 700, height: 700, background: "#0071e3", opacity: 0.07,
-          top: -200, left: -200, animationDuration: "14s",
-          transform: `translate(${mouse.x * -28}px, ${mouse.y * -18}px) scale(1)`,
+          top: -200, left: -200,
+          transform: `translate(${mouse.x * -28}px, ${mouse.y * -18}px)`,
           transition: "transform 1.1s cubic-bezier(0.16, 1, 0.3, 1)",
         }} />
-        <div className="bg-blob" style={{
-          width: 550, height: 550, background: "#6366f1", opacity: 0.06,
-          top: "35%", right: -180, animationDuration: "18s", animationDelay: "-5s",
-          transform: `translate(${mouse.x * 18}px, ${mouse.y * 22}px) scale(1)`,
+        <div className="float-2" style={{
+          position: "absolute", borderRadius: "50%", filter: "blur(90px)",
+          width: 580, height: 580, background: "#6366f1", opacity: 0.065,
+          top: "30%", right: -200,
+          transform: `translate(${mouse.x * 18}px, ${mouse.y * 22}px)`,
           transition: "transform 0.9s cubic-bezier(0.16, 1, 0.3, 1)",
         }} />
-        <div className="bg-blob" style={{
-          width: 450, height: 450, background: "#34c759", opacity: 0.05,
-          bottom: -120, left: "30%", animationDuration: "12s", animationDelay: "-9s",
-          transform: `translate(${mouse.x * 12}px, ${mouse.y * -14}px) scale(1)`,
+        <div className="float-3" style={{
+          position: "absolute", borderRadius: "50%", filter: "blur(80px)",
+          width: 480, height: 480, background: "#34c759", opacity: 0.055,
+          bottom: -100, left: "25%",
+          transform: `translate(${mouse.x * 12}px, ${mouse.y * -14}px)`,
           transition: "transform 1.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        }} />
+        <div className="float-4" style={{
+          position: "absolute", borderRadius: "50%", filter: "blur(110px)",
+          width: 360, height: 360, background: "#ff9500", opacity: 0.04,
+          top: "60%", left: -80,
+          transform: `translate(${mouse.x * -10}px, ${mouse.y * 16}px)`,
+          transition: "transform 1.5s cubic-bezier(0.16, 1, 0.3, 1)",
         }} />
       </div>
 
@@ -313,7 +327,7 @@ export default function HomePage() {
 
               <p className="text-lg text-gray-500 leading-relaxed max-w-lg mx-auto">
                 Drop your financials or connect your CFO stack. Five AI agents analyze survival odds, burn
-                trajectory, anomalies, Monte Carlo scenarios — and generate a full board deck. All in 30 seconds.
+                trajectory, anomalies, Monte Carlo scenarios, and generate a full board deck. All in 30 seconds.
               </p>
 
               <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -375,15 +389,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <UploadZone onFile={setFile} disabled={isRunning} />
-
-              {file && (
-                <div className="flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-2.5 text-sm text-green-700">
-                  <Upload className="h-4 w-4 flex-shrink-0" />
-                  <span className="font-medium">{file.name}</span>
-                  <span className="text-green-500 ml-auto text-xs">{(file.size / 1024).toFixed(0)} KB</span>
-                </div>
-              )}
+              <UploadZone onFiles={setFiles} disabled={isRunning} />
 
               {error && (
                 <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -394,7 +400,7 @@ export default function HomePage() {
 
               <div className="flex flex-col sm:flex-row gap-3 pt-1">
                 <button
-                  disabled={!file || isRunning}
+                  disabled={files.length === 0 || isRunning}
                   onClick={() => runPipeline(false, "csv")}
                   className="flex-1 h-12 flex items-center justify-center gap-2 rounded-2xl bg-gray-900 text-white font-semibold text-sm transition-all hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -416,11 +422,11 @@ export default function HomePage() {
 
               <div className="flex flex-col items-center gap-1 pt-1">
                 <p className="text-center text-[11px] text-gray-400">
-                  Accepts CSV · XLSX · PDF — no account required
+                  Accepts CSV · XLSX · PDF · no account required
                 </p>
                 <p className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
                   <Lock className="h-3 w-3 text-gray-400" />
-                  No files are stored — analysis runs in memory and is discarded after your session
+                  No files are stored. Analysis runs in memory and is discarded after your session.
                 </p>
               </div>
             </div>
@@ -568,6 +574,101 @@ export default function HomePage() {
                 <code className="font-mono bg-gray-100 px-1 rounded text-gray-500">STRIPE_CLIENT_ID</code> /
                 <code className="font-mono bg-gray-100 px-1 rounded text-gray-500"> QUICKBOOKS_CLIENT_ID</code>
                 {" "}in <code className="font-mono bg-gray-100 px-1 rounded text-gray-500">.env</code> for live OAuth
+              </p>
+            </div>
+
+            {/* ── FILE FORMAT GUIDE ─────────────────────────────────── */}
+            <div className="mt-12">
+              <div className="flex items-center gap-2 mb-5">
+                <Info className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <h3 className="text-sm font-semibold text-gray-700">What your files need to include</h3>
+                <div className="h-px flex-1 bg-gray-200" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                {/* CSV / Excel */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-50 flex-shrink-0">
+                      <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-gray-900">CSV &amp; Excel</div>
+                      <div className="text-[10px] text-gray-400 font-medium">.csv · .xlsx · .xls</div>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-gray-500 mb-3 font-medium uppercase tracking-wide">Required columns</p>
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {["week_start", "customer_id", "transaction_type", "amount"].map(col => (
+                      <code key={col} className="rounded-lg bg-gray-100 border border-gray-200 px-2 py-1 text-[11px] font-mono text-gray-700">{col}</code>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2 text-[11px] text-gray-500">
+                    <div className="flex gap-2">
+                      <span className="text-gray-300 flex-shrink-0">·</span>
+                      <span><span className="font-mono text-gray-700">week_start</span>: ISO date e.g. <span className="font-mono text-blue-600">2024-01-08</span></span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-gray-300 flex-shrink-0">·</span>
+                      <span><span className="font-mono text-gray-700">transaction_type</span>: one of <span className="font-mono text-gray-600">subscription_revenue</span>, <span className="font-mono text-gray-600">churn_refund</span>, <span className="font-mono text-gray-600">cogs</span>, <span className="font-mono text-gray-600">salary_expense</span>, <span className="font-mono text-gray-600">marketing_expense</span></span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-gray-300 flex-shrink-0">·</span>
+                      <span><span className="font-mono text-gray-700">amount</span>: positive number, USD</span>
+                    </div>
+                  </div>
+
+                  <a
+                    href="http://localhost:8000/sample-csv"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download sample CSV template
+                  </a>
+                </div>
+
+                {/* PDF */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 flex-shrink-0">
+                      <FileText className="h-4 w-4 text-red-500" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-gray-900">PDF Statements</div>
+                      <div className="text-[10px] text-gray-400 font-medium">.pdf · max 50 pages</div>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-gray-500 mb-3 font-medium uppercase tracking-wide">Supported document types</p>
+
+                  <div className="space-y-2 text-[11px] text-gray-500 mb-4">
+                    {[
+                      "Balance sheets & P&L statements",
+                      "Bank statements & cash flow reports",
+                      "QuickBooks, Xero, Wave, FreshBooks exports",
+                      "Text-based PDFs only (not scanned images)",
+                    ].map(item => (
+                      <div key={item} className="flex gap-2">
+                        <span className="text-green-500 flex-shrink-0">✓</span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-[11px] text-amber-700">
+                    Photo and scanned PDFs are not supported. Export as text from your accounting software.
+                  </div>
+                </div>
+
+              </div>
+
+              <p className="text-center text-[10px] text-gray-400 mt-4">
+                Add up to 5 files. CSVs are merged automatically · PDFs are parsed with text extraction.
               </p>
             </div>
 

@@ -70,13 +70,13 @@ export function DeferredRevenueCard({ runId }: Props) {
         <div>
           <div className="text-[9px] text-gray-400 mb-0.5">Total deferred</div>
           <div className="text-xl font-black tabular-nums text-blue-600">
-            {data ? fmtK(data.total_deferred_balance) : "—"}
+            {data ? fmtK(data.total_deferred_balance) : "..."}
           </div>
         </div>
         <div>
           <div className="text-[9px] text-gray-400 mb-0.5">This month recognized</div>
           <div className="text-xl font-black tabular-nums text-green-600">
-            {data ? fmtK(data.current_month_recognized) : "—"}
+            {data ? fmtK(data.current_month_recognized) : "..."}
           </div>
         </div>
       </div>

@@ -66,7 +66,7 @@ export function BoardPrep({ questions }: Props) {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-gray-900">Board Interrogation Deck</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Adversarial questions a Sequoia partner would ask — with pre-drafted CFO answers</p>
+          <p className="text-xs text-gray-400 mt-0.5">Adversarial questions a Sequoia partner would ask, with pre-drafted CFO answers</p>
         </div>
         <div className="flex gap-1.5">
           <Badge variant="red">{questions.filter(q => q.danger === "RED").length} critical</Badge>

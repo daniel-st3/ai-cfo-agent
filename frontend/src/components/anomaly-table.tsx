@@ -97,7 +97,7 @@ function AnomalyCard({ anomaly }: { anomaly: Anomaly }) {
           </div>
 
           <div className="text-xs text-gray-500 mt-1">
-            expected range: {fmtVal(lo)} – {fmtVal(hi)}
+            expected range: {fmtVal(lo)} to {fmtVal(hi)}
           </div>
         </div>
 

@@ -69,7 +69,7 @@ export function ChurnTrendChart({ snapshots }: Props) {
         <div className="text-center">
           <div className="text-[10px] text-gray-400 uppercase tracking-wide">Ratio</div>
           <div className={`font-bold text-base mt-0.5 ${ltvCacRatio && Number(ltvCacRatio) >= 3 ? "text-green-600" : ltvCacRatio ? "text-amber-600" : "text-gray-400"}`}>
-            {ltvCacRatio ? `${ltvCacRatio}×` : "—"}
+            {ltvCacRatio ? `${ltvCacRatio}×` : "..."}
           </div>
         </div>
       </div>

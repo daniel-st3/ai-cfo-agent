@@ -266,7 +266,7 @@ function RiskScoreCards({ profiles, byCompetitor, maxThreat }: {
       <div className={`flex items-center gap-2 mb-3 text-xs font-bold ${pressureColor}`}>
         <span>Overall market pressure:</span>
         <span className={`rounded-full border px-2 py-0.5 ${pressureColor} border-current`}>{pressureLabel}</span>
-        {avgScore > 4 && <span className="text-gray-500 font-normal">— Consider pricing review before Q3</span>}
+        {avgScore > 4 && <span className="text-gray-500 font-normal">Consider pricing review before Q3</span>}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {profiles.slice(0, 6).map(p => {
@@ -297,7 +297,7 @@ function PriceIntelligenceFeed({ signals }: { signals: MarketSignal[] }) {
     return (
       <div className="flex items-center gap-2 py-3 text-xs text-gray-400">
         <span className="text-green-500">✓</span>
-        No pricing moves detected — competitive pricing appears stable.
+        No pricing moves detected. Competitive pricing appears stable.
       </div>
     );
   }
@@ -376,7 +376,7 @@ export function MarketIntelligence({ signals, sector, companyName }: Props) {
           <div className="flex items-center gap-2 mb-1">
             <Globe className="h-4 w-4 text-blue-500 flex-shrink-0" />
             <span className="text-base font-semibold text-gray-900">
-              {companyName ? companyName + " — " : ""}Competitive Landscape
+              {companyName ? companyName + ": " : ""}Competitive Landscape
             </span>
             {/* Timestamp pill */}
             <span className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 border border-gray-200 rounded-full px-2 py-0.5">
@@ -480,7 +480,7 @@ export function MarketIntelligence({ signals, sector, companyName }: Props) {
       )}
 
       <p className="text-[10px] text-gray-300 text-center">
-        Logos via Clearbit · Profiles via Wikipedia · Signals via DuckDuckGo &amp; HN — all free
+        Logos via Clearbit · Profiles via Wikipedia · Signals via DuckDuckGo &amp; HN · all free
       </p>
     </div>
   );
