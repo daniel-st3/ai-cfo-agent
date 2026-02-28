@@ -172,9 +172,22 @@ class QuickBooksIngestionAgent:
 
         rows_synced = 0
         try:
-            rows_synced = await self._sync_profit_and_loss(
-                session, run_id, access_token, realm_id, start_date, end_date
-            )
+            try:
+                rows_synced = await self._sync_profit_and_loss(
+                    session, run_id, access_token, realm_id, start_date, end_date
+                )
+            except httpx.HTTPStatusError as token_err:
+                if token_err.response.status_code == 401:
+                    refreshed = await self._refresh_access_token(session, integration)
+                    if refreshed:
+                        access_token = _decrypt_token(integration.access_token_enc or "")
+                        rows_synced = await self._sync_profit_and_loss(
+                            session, run_id, access_token, realm_id, start_date, end_date
+                        )
+                    else:
+                        raise
+                else:
+                    raise
             integration.last_sync_at = datetime.utcnow()
             await session.commit()
 
@@ -195,6 +208,42 @@ class QuickBooksIngestionAgent:
             ))
             await session.commit()
             return {"rows_synced": rows_synced, "status": "error", "message": str(e)}
+
+    async def _refresh_access_token(
+        self, session: AsyncSession, integration: Integration
+    ) -> bool:
+        """Exchange the stored refresh_token for a new access_token.
+
+        Updates integration in-place and commits. Returns True on success.
+        """
+        client_id = os.environ.get("QUICKBOOKS_CLIENT_ID", "")
+        client_secret = os.environ.get("QUICKBOOKS_CLIENT_SECRET", "")
+        if not client_id or not client_secret:
+            return False
+
+        refresh_token = _decrypt_token(integration.refresh_token_enc or "")
+        if not refresh_token:
+            return False
+
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    QB_TOKEN_URL,
+                    data={"grant_type": "refresh_token", "refresh_token": refresh_token},
+                    auth=(client_id, client_secret),
+                    headers={"Accept": "application/json"},
+                    timeout=15,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+
+            integration.access_token_enc = _encrypt_token(data["access_token"])
+            if "refresh_token" in data:
+                integration.refresh_token_enc = _encrypt_token(data["refresh_token"])
+            await session.commit()
+            return True
+        except Exception:
+            return False
 
     async def _sync_profit_and_loss(
         self,

@@ -324,3 +324,38 @@ class SyncResponse(BaseModel):
     rows_synced: int
     status: Literal["success", "error"]
     message: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Fraud Detection schemas
+# ---------------------------------------------------------------------------
+
+class FraudAlertRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: uuid.UUID
+    week_start: date
+    category: str = Field(min_length=1, max_length=100)
+    pattern: str = Field(min_length=1, max_length=50)
+    severity: SeverityType
+    amount: Decimal
+    description: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Customer Profitability schemas
+# ---------------------------------------------------------------------------
+
+class CustomerProfileRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: uuid.UUID
+    customer_id: str = Field(min_length=1, max_length=255)
+    total_revenue: Decimal
+    weeks_active: int
+    avg_weekly_revenue: Decimal
+    first_seen: date
+    last_seen: date
+    churn_flag: bool = False
+    segment: str = Field(min_length=1, max_length=20)
+    revenue_pct: Decimal

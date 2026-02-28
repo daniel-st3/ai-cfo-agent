@@ -29,6 +29,8 @@ from api.models import (
     CashFlowForecast,
     CommittedExpense,
     Contract,
+    CustomerProfile,
+    FraudAlert,
     KPISnapshot,
     MarketSignal,
     RawFinancial,
@@ -388,6 +390,57 @@ def create_app(
             ],
             key=lambda x: sev_order.get(x["severity"], 99),
         )
+
+    @app.get("/runs/{run_id}/fraud-alerts")
+    async def run_fraud_alerts(run_id: uuid.UUID) -> list[dict]:
+        """Return all fraud alerts for a run, ordered by severity then week."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        sev_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+        async with db_manager.session() as session:
+            rows = (await session.execute(
+                select(FraudAlert)
+                .where(FraudAlert.run_id == run_id)
+                .order_by(FraudAlert.week_start.desc())
+            )).scalars().all()
+        return sorted(
+            [
+                {
+                    "week_start":  str(r.week_start),
+                    "category":    r.category,
+                    "pattern":     r.pattern,
+                    "severity":    r.severity,
+                    "amount":      float(r.amount),
+                    "description": r.description or "",
+                }
+                for r in rows
+            ],
+            key=lambda x: sev_order.get(x["severity"], 99),
+        )
+
+    @app.get("/runs/{run_id}/customers")
+    async def run_customers(run_id: uuid.UUID) -> list[dict]:
+        """Return all customer profiles for a run, ordered by total revenue descending."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            rows = (await session.execute(
+                select(CustomerProfile)
+                .where(CustomerProfile.run_id == run_id)
+                .order_by(CustomerProfile.total_revenue.desc())
+            )).scalars().all()
+        return [
+            {
+                "customer_id":        r.customer_id,
+                "total_revenue":      float(r.total_revenue),
+                "weeks_active":       r.weeks_active,
+                "avg_weekly_revenue": float(r.avg_weekly_revenue),
+                "first_seen":         str(r.first_seen),
+                "last_seen":          str(r.last_seen),
+                "churn_flag":         r.churn_flag,
+                "segment":            r.segment,
+                "revenue_pct":        float(r.revenue_pct),
+            }
+            for r in rows
+        ]
 
     @app.get("/runs/{run_id}/signals")
     async def run_signals(run_id: uuid.UUID) -> list[dict]:

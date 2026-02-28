@@ -4,7 +4,9 @@ import hashlib
 import importlib
 import math
 import os
+import statistics as _statistics
 import uuid
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -16,8 +18,8 @@ from sklearn.ensemble import IsolationForest
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.models import Anomaly, KPISnapshot, RawFinancial
-from api.schemas import AnomalyRecord, KPISnapshotRecord
+from api.models import Anomaly, CustomerProfile, FraudAlert, KPISnapshot, RawFinancial
+from api.schemas import AnomalyRecord, CustomerProfileRecord, FraudAlertRecord, KPISnapshotRecord
 
 METRIC_NAMES = ["mrr", "arr", "churn_rate", "burn_rate", "gross_margin", "cac", "ltv"]
 
@@ -644,6 +646,213 @@ def compute_scenario_stress_test(snapshots: list[KPISnapshotRecord]) -> list[dic
     return scenarios
 
 
+def _week_of(d: date) -> date:
+    """Return the Monday of the week containing date d."""
+    return d - timedelta(days=d.weekday())
+
+
+def detect_fraud_patterns(
+    rows: list[RawFinancial], run_id: uuid.UUID
+) -> list[FraudAlertRecord]:
+    """Apply 5 rule-based fraud checks to raw transaction rows."""
+    EXPENSE_CATS = {"subscription_revenue", "churn_refund"}
+
+    # Build weekly buckets: {week -> {category -> [amounts]}}
+    weekly: dict[date, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for row in rows:
+        weekly[_week_of(row.date)][row.category].append(float(row.amount))
+
+    sorted_weeks = sorted(weekly.keys())
+
+    # Build per-category timeseries of weekly totals
+    cat_weekly: dict[str, list[tuple[date, float]]] = defaultdict(list)
+    for wk in sorted_weeks:
+        for cat, amts in weekly[wk].items():
+            cat_weekly[cat].append((wk, sum(amts)))
+
+    alerts: list[FraudAlertRecord] = []
+
+    # Rule 1: round_number — expense amounts exactly divisible by 1000 (>= $1000)
+    for row in rows:
+        if row.category in EXPENSE_CATS:
+            continue
+        amt = abs(float(row.amount))
+        if amt >= 1000 and amt % 1000 == 0:
+            alerts.append(FraudAlertRecord(
+                run_id=run_id,
+                week_start=_week_of(row.date),
+                category=row.category,
+                pattern="round_number",
+                severity="HIGH",
+                amount=row.amount,
+                description=(
+                    f"Perfectly round ${amt:,.0f} in {row.category} on {row.date}. "
+                    "Round numbers may indicate fictitious or manually entered transactions."
+                ),
+            ))
+
+    # Rule 2: velocity_spike — weekly category total > 3× 8-week rolling median
+    for cat, totals in cat_weekly.items():
+        if len(totals) < 4:
+            continue
+        for i, (wk, total) in enumerate(totals):
+            lookback = [t for _, t in totals[max(0, i - 8):i]]
+            if len(lookback) < 2:
+                continue
+            median = _statistics.median(lookback)
+            if median == 0:
+                continue
+            if abs(total) > 3 * abs(median):
+                alerts.append(FraudAlertRecord(
+                    run_id=run_id,
+                    week_start=wk,
+                    category=cat,
+                    pattern="velocity_spike",
+                    severity="HIGH",
+                    amount=Decimal(str(round(total, 4))),
+                    description=(
+                        f"{cat} spike: ${abs(total):,.0f} vs ${abs(median):,.0f} rolling median "
+                        f"({abs(total) / abs(median):.1f}x). Possible unauthorized spend."
+                    ),
+                ))
+
+    # Rule 3: duplicate_amount — same amount + category 2+ times in same week
+    for wk in sorted_weeks:
+        for cat, amts in weekly[wk].items():
+            seen: dict[str, int] = {}
+            for a in amts:
+                key = f"{a:.4f}"
+                seen[key] = seen.get(key, 0) + 1
+            for key, count in seen.items():
+                if count >= 2:
+                    alerts.append(FraudAlertRecord(
+                        run_id=run_id,
+                        week_start=wk,
+                        category=cat,
+                        pattern="duplicate_amount",
+                        severity="MEDIUM",
+                        amount=Decimal(key),
+                        description=(
+                            f"${float(key):,.2f} appears {count}x in {cat} during week {wk}. "
+                            "Possible duplicate or split transaction."
+                        ),
+                    ))
+
+    # Rule 4: zero_revenue_week — zero revenue but above-median expenses
+    all_expense_totals = [
+        sum(abs(a) for cat, amts in weekly[wk].items()
+            if cat not in EXPENSE_CATS for a in amts)
+        for wk in sorted_weeks
+    ]
+    if len(all_expense_totals) >= 4:
+        median_expense = _statistics.median(all_expense_totals)
+        for wk in sorted_weeks:
+            revenue = sum(weekly[wk].get("subscription_revenue", []))
+            expense = sum(
+                abs(a) for cat, amts in weekly[wk].items()
+                if cat not in EXPENSE_CATS for a in amts
+            )
+            if revenue == 0 and expense > median_expense:
+                alerts.append(FraudAlertRecord(
+                    run_id=run_id,
+                    week_start=wk,
+                    category="subscription_revenue",
+                    pattern="zero_revenue_week",
+                    severity="MEDIUM",
+                    amount=Decimal("0"),
+                    description=(
+                        f"Zero revenue week {wk} with ${expense:,.0f} in expenses "
+                        f"(median: ${median_expense:,.0f}). Revenue recognition gap or data issue."
+                    ),
+                ))
+
+    # Rule 5: contractor_ratio — contractor > 2.5× salary in a week
+    for wk in sorted_weeks:
+        contractor = abs(sum(weekly[wk].get("contractor_expense", [])))
+        salary = abs(sum(weekly[wk].get("salary_expense", [])))
+        if salary > 0 and contractor / salary > 2.5:
+            alerts.append(FraudAlertRecord(
+                run_id=run_id,
+                week_start=wk,
+                category="contractor_expense",
+                pattern="contractor_ratio",
+                severity="LOW",
+                amount=Decimal(str(round(contractor, 4))),
+                description=(
+                    f"Contractors ${contractor:,.0f} = {contractor / salary:.1f}x salary ${salary:,.0f} "
+                    f"(week {wk}). High ratio may indicate misclassification."
+                ),
+            ))
+
+    # Deduplicate: keep first occurrence per (week, category, pattern)
+    seen_keys: set[str] = set()
+    deduped: list[FraudAlertRecord] = []
+    for a in alerts:
+        key = f"{a.week_start}|{a.category}|{a.pattern}"
+        if key not in seen_keys:
+            seen_keys.add(key)
+            deduped.append(a)
+
+    return deduped
+
+
+def compute_customer_profiles(
+    rows: list[RawFinancial], run_id: uuid.UUID
+) -> list[CustomerProfileRecord]:
+    """Compute per-customer revenue metrics from raw subscription rows."""
+    customer_weeks: dict[str, set[date]] = defaultdict(set)
+    customer_revenue: dict[str, float] = defaultdict(float)
+    customer_first: dict[str, date] = {}
+    customer_last: dict[str, date] = {}
+    churned: set[str] = set()
+
+    for row in rows:
+        if not row.customer_id:
+            continue
+        cid = row.customer_id
+        if row.category == "subscription_revenue":
+            customer_weeks[cid].add(row.date)
+            customer_revenue[cid] += float(row.amount)
+            if cid not in customer_first or row.date < customer_first[cid]:
+                customer_first[cid] = row.date
+            if cid not in customer_last or row.date > customer_last[cid]:
+                customer_last[cid] = row.date
+        elif row.category == "churn_refund":
+            churned.add(cid)
+
+    if not customer_revenue:
+        return []
+
+    total_revenue = sum(customer_revenue.values())
+
+    profiles: list[CustomerProfileRecord] = []
+    for cid, revenue in customer_revenue.items():
+        weeks_active = len(customer_weeks[cid])
+        avg_weekly = revenue / max(weeks_active, 1)
+
+        if avg_weekly > 500:
+            segment = "Enterprise"
+        elif avg_weekly > 150:
+            segment = "Mid"
+        else:
+            segment = "SMB"
+
+        profiles.append(CustomerProfileRecord(
+            run_id=run_id,
+            customer_id=cid,
+            total_revenue=Decimal(str(round(revenue, 2))),
+            weeks_active=weeks_active,
+            avg_weekly_revenue=Decimal(str(round(avg_weekly, 2))),
+            first_seen=customer_first.get(cid, date.today()),
+            last_seen=customer_last.get(cid, date.today()),
+            churn_flag=cid in churned,
+            segment=segment,
+            revenue_pct=Decimal(str(round(revenue / total_revenue, 4))) if total_revenue > 0 else Decimal("0"),
+        ))
+
+    return sorted(profiles, key=lambda x: float(x.total_revenue), reverse=True)
+
+
 class AnalysisAgent:
     def __init__(self, chronos_enabled: bool = True) -> None:
         self.forecaster = Chronos2Forecaster(enabled=chronos_enabled)
@@ -666,9 +875,6 @@ class AnalysisAgent:
         # Compute WOW features: survival probability + scenario stress test
         survival = compute_survival_analysis(snapshots)
         scenarios = compute_scenario_stress_test(snapshots)
-
-        await session.execute(delete(KPISnapshot).where(KPISnapshot.run_id == run_id))
-        await session.execute(delete(Anomaly).where(Anomaly.run_id == run_id))
 
         snapshot_entities = [
             KPISnapshot(
@@ -699,8 +905,47 @@ class AnalysisAgent:
             for item in merged_anomalies
         ]
 
+        # Fraud detection and customer profiling
+        fraud_alerts = detect_fraud_patterns(list(raw_rows), run_id)
+        customer_profiles = compute_customer_profiles(list(raw_rows), run_id)
+
+        await session.execute(delete(KPISnapshot).where(KPISnapshot.run_id == run_id))
+        await session.execute(delete(Anomaly).where(Anomaly.run_id == run_id))
+        await session.execute(delete(FraudAlert).where(FraudAlert.run_id == run_id))
+        await session.execute(delete(CustomerProfile).where(CustomerProfile.run_id == run_id))
+
+        fraud_entities = [
+            FraudAlert(
+                run_id=item.run_id,
+                week_start=item.week_start,
+                category=item.category,
+                pattern=item.pattern,
+                severity=item.severity,
+                amount=item.amount,
+                description=item.description,
+            )
+            for item in fraud_alerts
+        ]
+        customer_entities = [
+            CustomerProfile(
+                run_id=item.run_id,
+                customer_id=item.customer_id,
+                total_revenue=item.total_revenue,
+                weeks_active=item.weeks_active,
+                avg_weekly_revenue=item.avg_weekly_revenue,
+                first_seen=item.first_seen,
+                last_seen=item.last_seen,
+                churn_flag=item.churn_flag,
+                segment=item.segment,
+                revenue_pct=item.revenue_pct,
+            )
+            for item in customer_profiles
+        ]
+
         session.add_all(snapshot_entities)
         session.add_all(anomaly_entities)
+        session.add_all(fraud_entities)
+        session.add_all(customer_entities)
         await session.commit()
 
         latest = snapshots[-1]
@@ -747,4 +992,6 @@ __all__ = [
     "merge_and_deduplicate_anomalies",
     "compute_survival_analysis",
     "compute_scenario_stress_test",
+    "detect_fraud_patterns",
+    "compute_customer_profiles",
 ]

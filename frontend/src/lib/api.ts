@@ -2,7 +2,9 @@ import type {
   AnalyzeResponse,
   BoardDeckStatus,
   CashFlowSectionData,
+  CustomerProfile,
   DeferredRevenueSummary,
+  FraudAlert,
   IntegrationStatus,
   PipelineStatus,
   BoardPrepResponse,
@@ -278,4 +280,18 @@ export async function syncStripe(runId: string): Promise<{ rows_synced: number; 
 /** Sync QuickBooks data for a run */
 export async function syncQuickBooks(runId: string): Promise<{ rows_synced: number; status: string; message: string }> {
   return apiFetch(`/runs/${runId}/integrations/quickbooks/sync`, { method: "POST" });
+}
+
+// ── Fraud Detection ─────────────────────────────────────────────────────────
+
+/** Get fraud alerts for a run */
+export async function getFraudAlerts(runId: string): Promise<FraudAlert[]> {
+  return apiFetch(`/runs/${runId}/fraud-alerts`);
+}
+
+// ── Customer Profitability ──────────────────────────────────────────────────
+
+/** Get customer profitability profiles for a run */
+export async function getCustomerProfiles(runId: string): Promise<CustomerProfile[]> {
+  return apiFetch(`/runs/${runId}/customers`);
 }

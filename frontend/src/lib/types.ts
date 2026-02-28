@@ -201,3 +201,28 @@ export interface IntegrationStatus {
   last_sync_at: string | null;
   rows_synced: number;
 }
+
+// ── Fraud Detection ─────────────────────────────────────────────────────────
+
+export interface FraudAlert {
+  week_start: string;
+  category: string;
+  pattern: "round_number" | "velocity_spike" | "duplicate_amount" | "zero_revenue_week" | "contractor_ratio";
+  severity: "LOW" | "MEDIUM" | "HIGH";
+  amount: number;
+  description: string;
+}
+
+// ── Customer Profitability ──────────────────────────────────────────────────
+
+export interface CustomerProfile {
+  customer_id: string;
+  total_revenue: number;
+  weeks_active: number;
+  avg_weekly_revenue: number;
+  first_seen: string;
+  last_seen: string;
+  churn_flag: boolean;
+  segment: "Enterprise" | "Mid" | "SMB";
+  revenue_pct: number;
+}

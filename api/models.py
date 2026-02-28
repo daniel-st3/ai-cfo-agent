@@ -5,7 +5,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Text, Uuid, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import JSON
 
@@ -226,6 +226,41 @@ class BoardDeck(Base):
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class FraudAlert(Base):
+    """Suspicious transaction patterns detected by rule-based fraud analysis."""
+
+    __tablename__ = "fraud_alerts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    week_start: Mapped[date] = mapped_column(Date, nullable=False)
+    category: Mapped[str] = mapped_column(String(100), nullable=False)
+    pattern: Mapped[str] = mapped_column(String(50), nullable=False)
+    severity: Mapped[str] = mapped_column(String(10), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CustomerProfile(Base):
+    """Per-customer revenue metrics computed from raw financial rows."""
+
+    __tablename__ = "customer_profiles"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    customer_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    total_revenue: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    weeks_active: Mapped[int] = mapped_column(Integer, nullable=False)
+    avg_weekly_revenue: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    first_seen: Mapped[date] = mapped_column(Date, nullable=False)
+    last_seen: Mapped[date] = mapped_column(Date, nullable=False)
+    churn_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    segment: Mapped[str] = mapped_column(String(20), nullable=False)
+    revenue_pct: Mapped[Decimal] = mapped_column(Numeric(8, 4), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 __all__ = [
     "Base",
     "RawFinancial",
@@ -241,4 +276,6 @@ __all__ = [
     "Contract",
     "DeferredRevenueSchedule",
     "BoardDeck",
+    "FraudAlert",
+    "CustomerProfile",
 ]

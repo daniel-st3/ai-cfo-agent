@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import os
 import uuid
-from datetime import datetime
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.models import Integration, RawFinancial, SyncLog
@@ -133,11 +134,20 @@ class StripeIngestionAgent:
         rows_synced = 0
 
         try:
+            # Clear existing stripe rows for this run to avoid duplicates on re-sync
+            await session.execute(
+                delete(RawFinancial).where(
+                    RawFinancial.run_id == run_id,
+                    RawFinancial.source_file == "stripe_sync",
+                )
+            )
+            await session.flush()
+
             async with httpx.AsyncClient() as client:
-                # Paginate through subscriptions
+                # Paginate through all active + canceled subscriptions for history
                 starting_after: str | None = None
                 while True:
-                    params: dict = {"limit": 100, "status": "active"}
+                    params: dict = {"limit": 100}
                     if starting_after:
                         params["starting_after"] = starting_after
 
@@ -151,10 +161,10 @@ class StripeIngestionAgent:
                     data = resp.json()
 
                     for sub in data.get("data", []):
-                        row = self._subscription_to_raw(sub, run_id)
-                        if row:
+                        history_rows = self._subscription_to_raw_history(sub, run_id)
+                        for row in history_rows:
                             session.add(row)
-                            rows_synced += 1
+                        rows_synced += len(history_rows)
 
                     if not data.get("has_more"):
                         break
@@ -187,34 +197,46 @@ class StripeIngestionAgent:
             await session.commit()
             return {"rows_synced": rows_synced, "status": "error", "message": str(e)}
 
-    def _subscription_to_raw(self, sub: dict, run_id: uuid.UUID) -> RawFinancial | None:
-        """Map a Stripe subscription object to a RawFinancial row."""
-        from datetime import date as date_type
-        from decimal import Decimal
-        import datetime as dt
-
+    def _subscription_to_raw_history(
+        self, sub: dict, run_id: uuid.UUID
+    ) -> list[RawFinancial]:
+        """Generate one RawFinancial row per week for the full subscription lifetime."""
         try:
-            amount_cents = sub.get("items", {}).get("data", [{}])[0].get("price", {}).get("unit_amount", 0)
-            interval = sub.get("items", {}).get("data", [{}])[0].get("price", {}).get("recurring", {}).get("interval", "month")
+            item = sub.get("items", {}).get("data", [{}])[0]
+            amount_cents = item.get("price", {}).get("unit_amount", 0) or 0
+            interval = item.get("price", {}).get("recurring", {}).get("interval", "month")
+
             amount_usd = amount_cents / 100.0
             if interval == "year":
-                amount_usd = amount_usd / 52  # annualize to weekly
+                weekly_amount = Decimal(str(round(amount_usd / 52, 4)))
             elif interval == "month":
-                amount_usd = amount_usd / 4.33
+                weekly_amount = Decimal(str(round(amount_usd / 4.33, 4)))
+            else:
+                weekly_amount = Decimal(str(round(amount_usd, 4)))
 
-            created_ts = sub.get("current_period_start", sub.get("created", 0))
-            created_date = dt.date.fromtimestamp(created_ts)
+            start_ts = sub.get("created") or sub.get("current_period_start", 0)
+            start = date.fromtimestamp(start_ts)
 
-            return RawFinancial(
-                run_id=run_id,
-                date=created_date,
-                category="subscription_revenue",
-                amount=Decimal(str(round(amount_usd, 4))),
-                customer_id=sub.get("customer", ""),
-                source_file="stripe_sync",
-            )
+            cancel_ts = sub.get("canceled_at") or sub.get("ended_at")
+            end = date.fromtimestamp(cancel_ts) if cancel_ts else date.today()
+
+            customer_id = sub.get("customer", "")
+
+            rows: list[RawFinancial] = []
+            week = start
+            while week <= end:
+                rows.append(RawFinancial(
+                    run_id=run_id,
+                    date=week,
+                    category="subscription_revenue",
+                    amount=weekly_amount,
+                    customer_id=customer_id,
+                    source_file="stripe_sync",
+                ))
+                week += timedelta(weeks=1)
+            return rows
         except Exception:
-            return None
+            return []
 
     async def _create_demo_integration(self, session: AsyncSession) -> Integration:
         integration = Integration(

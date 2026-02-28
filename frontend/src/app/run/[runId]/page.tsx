@@ -25,14 +25,18 @@ import { DeferredRevenueCard }           from "@/components/deferred-revenue-car
 import { IntegrationsBar }               from "@/components/integrations-bar";
 import { IntegrationsModal }             from "@/components/integrations-modal";
 import { BoardDeckDownload }             from "@/components/board-deck-download";
+import { FraudAlertPanel }              from "@/components/fraud-alert-panel";
+import { CustomerMatrix }               from "@/components/customer-matrix";
 import {
   getKPISeries, getAnomalies, getSignals,
   getBoardPrep, getReport, getVCMemo, getInvestorUpdate,
+  getFraudAlerts, getCustomerProfiles,
 } from "@/lib/api";
 import { fmtK, fmtPct } from "@/lib/utils";
 import type {
   AnalyzeResponse, KPISnapshot, Anomaly, MarketSignal,
   SurvivalAnalysis, ScenarioResult, BoardQuestion, ReportData, VCMemoData, InvestorUpdateData,
+  FraudAlert, CustomerProfile,
 } from "@/lib/types";
 
 function SectionHeading({ label, sub }: { label: string; sub?: string }) {
@@ -83,13 +87,15 @@ export default function RunPage() {
   const [scrollPct, setScrollPct] = useState(0);
 
   /* ── Core state ───────────────────────────────────────────────── */
-  const [snapshots,   setSnapshots]   = useState<KPISnapshot[]>([]);
-  const [anomalies,   setAnomalies]   = useState<Anomaly[]>([]);
-  const [signals,     setSignals]     = useState<MarketSignal[]>([]);
-  const [survival,    setSurvival]    = useState<SurvivalAnalysis | null>(null);
-  const [scenarios,   setScenarios]   = useState<ScenarioResult[]>([]);
-  const [companyName, setCompanyName] = useState("");
-  const [sector,      setSector]      = useState("saas_productivity");
+  const [snapshots,       setSnapshots]       = useState<KPISnapshot[]>([]);
+  const [anomalies,       setAnomalies]       = useState<Anomaly[]>([]);
+  const [signals,         setSignals]         = useState<MarketSignal[]>([]);
+  const [survival,        setSurvival]        = useState<SurvivalAnalysis | null>(null);
+  const [scenarios,       setScenarios]       = useState<ScenarioResult[]>([]);
+  const [companyName,     setCompanyName]     = useState("");
+  const [sector,          setSector]          = useState("saas_productivity");
+  const [fraudAlerts,     setFraudAlerts]     = useState<FraudAlert[]>([]);
+  const [customerProfiles, setCustomerProfiles] = useState<CustomerProfile[]>([]);
 
   /* ── AI generator state ───────────────────────────────────────── */
   const [boardQs,     setBoardQs]     = useState<BoardQuestion[] | null>(null);
@@ -145,12 +151,15 @@ export default function RunPage() {
     if (!runId) return;
     (async () => {
       try {
-        const [kpis, anoms, sigs] = await Promise.all([
+        const [kpis, anoms, sigs, frauds, customers] = await Promise.all([
           getKPISeries(runId), getAnomalies(runId), getSignals(runId),
+          getFraudAlerts(runId), getCustomerProfiles(runId),
         ]);
         setSnapshots(kpis);
         setAnomalies(anoms);
         setSignals(sigs);
+        setFraudAlerts(frauds);
+        setCustomerProfiles(customers);
 
         const cached = typeof window !== "undefined" ? sessionStorage.getItem(`run_${runId}`) : null;
         if (cached) {
@@ -407,14 +416,28 @@ export default function RunPage() {
           </div>
         </section>
 
-        {/* 9 · ANOMALY DETECTION ──────────────────────────────────── */}
+        {/* 9 · CUSTOMER PROFITABILITY MATRIX ─────────────────────── */}
+        <section className="section-enter">
+          <SectionHeading label="Customer Profitability Matrix"
+            sub={customerProfiles.length > 0 ? `${customerProfiles.length} customers · Enterprise / Mid / SMB segmentation · revenue concentration` : "Run analysis to see customer breakdown"} />
+          {loading ? <Skel h="h-64" /> : <CustomerMatrix profiles={customerProfiles} />}
+        </section>
+
+        {/* 10 · FRAUD MONITOR ─────────────────────────────────────── */}
+        <section className="section-enter">
+          <SectionHeading label="Fraud Monitor"
+            sub={fraudAlerts.length > 0 ? `${fraudAlerts.length} suspicious patterns detected · 5 behavioral rules · velocity, duplicates, round numbers` : "No suspicious patterns detected"} />
+          {loading ? <Skel h="h-48" /> : <FraudAlertPanel alerts={fraudAlerts} />}
+        </section>
+
+        {/* 11 · ANOMALY DETECTION ──────────────────────────────────── */}
         <section className="section-enter">
           <SectionHeading label="Anomaly Detection"
             sub={anomalies.length > 0 ? `${highAnomalies} HIGH severity · IsolationForest ML · feature importance + detection timeline` : "All metrics within expected ranges"} />
           {loading ? <Skel h="h-48" /> : <AnomalyMLPanel anomalies={anomalies} snapshotCount={snapshots.length} />}
         </section>
 
-        {/* 10 · AI INTELLIGENCE CENTER ─────────────────────────────── */}
+        {/* 12 · AI INTELLIGENCE CENTER ─────────────────────────────── */}
         {!loading && (
           <section className="section-enter">
             <SectionHeading label="AI Intelligence Center"
