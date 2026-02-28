@@ -5,7 +5,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Date, DateTime, Numeric, String, Text, Uuid, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Text, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import JSON
 
@@ -110,4 +110,135 @@ class Report(Base):
     )
 
 
-__all__ = ["Base", "RawFinancial", "KPISnapshot", "Anomaly", "MarketSignal", "Report"]
+class Integration(Base):
+    """OAuth token storage for Stripe and QuickBooks integrations."""
+
+    __tablename__ = "integrations"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    platform: Mapped[str] = mapped_column(String(20), nullable=False)  # stripe | quickbooks
+    access_token_enc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    refresh_token_enc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    realm_id: Mapped[str | None] = mapped_column(String(255), nullable=True)  # QuickBooks company ID
+    company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SyncLog(Base):
+    """Audit log for integration sync operations."""
+
+    __tablename__ = "sync_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    integration_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)  # success | error
+    rows_synced: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CashBalance(Base):
+    """Manual or synced current cash position for a run."""
+
+    __tablename__ = "cash_balances"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    balance: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    as_of_date: Mapped[date] = mapped_column(Date, nullable=False)
+    source: Mapped[str] = mapped_column(String(50), nullable=False, default="manual")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CommittedExpense(Base):
+    """Recurring committed outflows (rent, payroll, SaaS subscriptions)."""
+
+    __tablename__ = "committed_expenses"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    frequency: Mapped[str] = mapped_column(String(20), nullable=False)  # weekly|monthly|quarterly|annual
+    next_payment_date: Mapped[date] = mapped_column(Date, nullable=False)
+    category: Mapped[str] = mapped_column(String(100), nullable=False, default="other")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CashFlowForecast(Base):
+    """13-week rolling cash flow forecast output (P10/P50/P90 bands)."""
+
+    __tablename__ = "cash_flow_forecasts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    week_offset: Mapped[int] = mapped_column(Integer, nullable=False)  # 1–13
+    week_start: Mapped[date] = mapped_column(Date, nullable=False)
+    predicted_balance_p10: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    predicted_balance_p50: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    predicted_balance_p90: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    expected_inflows: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    expected_outflows: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Contract(Base):
+    """Annual or multi-year SaaS contracts for deferred revenue tracking."""
+
+    __tablename__ = "contracts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    customer_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    total_value: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    payment_terms: Mapped[str] = mapped_column(String(50), nullable=False, default="annual")
+    payment_received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class DeferredRevenueSchedule(Base):
+    """Monthly GAAP revenue recognition schedule per contract."""
+
+    __tablename__ = "deferred_revenue_schedules"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    contract_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("contracts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    month_start: Mapped[date] = mapped_column(Date, nullable=False)
+    recognized_revenue: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    deferred_balance: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+
+
+class BoardDeck(Base):
+    """Generated PowerPoint board deck files."""
+
+    __tablename__ = "board_decks"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    file_path: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="generating")
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+__all__ = [
+    "Base",
+    "RawFinancial",
+    "KPISnapshot",
+    "Anomaly",
+    "MarketSignal",
+    "Report",
+    "Integration",
+    "SyncLog",
+    "CashBalance",
+    "CommittedExpense",
+    "CashFlowForecast",
+    "Contract",
+    "DeferredRevenueSchedule",
+    "BoardDeck",
+]

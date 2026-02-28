@@ -16,24 +16,49 @@ import json as _json
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy import func as sqlfunc, select
 
 from api.database import check_db_connection, close_db, get_db_manager, init_db
-from api.models import Anomaly, KPISnapshot, MarketSignal, RawFinancial
+from api.models import (
+    Anomaly,
+    BoardDeck,
+    CashBalance,
+    CashFlowForecast,
+    CommittedExpense,
+    Contract,
+    KPISnapshot,
+    MarketSignal,
+    RawFinancial,
+)
 from api.schemas import (
     AnalyzeResponse,
+    BoardDeckStatusResponse,
     BoardPrepRequest,
     BoardPrepResponse,
+    CashBalanceRequest,
+    CashFlowForecastResponse,
+    CommittedExpenseRequest,
+    ContractRequest,
+    ContractResponse,
+    DeferredRevenueResponse,
     HealthResponse,
+    IntegrationStatusResponse,
     InvestorUpdateRequest,
     InvestorUpdateResponse,
+    OAuthAuthorizeResponse,
     ReportRequest,
     ReportResponse,
+    SyncResponse,
     VCMemoRequest,
     VCMemoResponse,
 )
+from agents.board_deck_generator import BoardDeckGenerator
+from agents.cash_flow_forecaster import CashFlowForecaster
+from agents.deferred_revenue import DeferredRevenueCalculator
 from agents.insight_writer import generate_investor_update, generate_vc_memo
+from agents.quickbooks_sync import QuickBooksIngestionAgent
+from agents.stripe_sync import StripeIngestionAgent
 from graph.cfo_graph import CFOGraphRunner, build_graph_runner
 
 _PROJECT_ROOT = Path(__file__).parent.parent
@@ -533,6 +558,294 @@ def create_app(
             db="connected" if db_connected else "disconnected",
             models=["claude-haiku-4-5", "isolation-forest", "monte-carlo"],
         )
+
+    # ── Cash Flow Forecast endpoints ─────────────────────────────────────────
+
+    @app.post("/runs/{run_id}/cash-balance")
+    async def set_cash_balance(run_id: uuid.UUID, body: CashBalanceRequest) -> dict:
+        """Manually set the current cash balance for a run."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            from decimal import Decimal
+            session.add(CashBalance(
+                run_id=run_id,
+                balance=Decimal(str(body.balance)),
+                as_of_date=body.as_of_date,
+                source=body.source,
+            ))
+            await session.commit()
+        return {"status": "ok", "run_id": str(run_id), "balance": float(body.balance)}
+
+    @app.post("/runs/{run_id}/committed-expenses")
+    async def add_committed_expense(run_id: uuid.UUID, body: CommittedExpenseRequest) -> dict:
+        """Add a recurring committed expense (rent, payroll, SaaS subscription)."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            from decimal import Decimal
+            expense = CommittedExpense(
+                run_id=run_id,
+                name=body.name,
+                amount=Decimal(str(body.amount)),
+                frequency=body.frequency,
+                next_payment_date=body.next_payment_date,
+                category=body.category,
+            )
+            session.add(expense)
+            await session.commit()
+        return {"status": "ok", "id": str(expense.id), "name": body.name}
+
+    @app.get("/runs/{run_id}/forecast/cash-flow")
+    async def get_cash_flow_forecast(run_id: uuid.UUID) -> dict:
+        """Return the 13-week cash flow forecast (P10/P50/P90) for a run.
+
+        Automatically computes the forecast from existing KPI + committed expense data.
+        """
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            forecaster = CashFlowForecaster()
+            result = await forecaster.run(session, run_id)
+        result["run_id"] = str(run_id)
+        return result
+
+    @app.post("/runs/{run_id}/forecast/refresh")
+    async def refresh_cash_flow_forecast(run_id: uuid.UUID) -> dict:
+        """Re-compute the 13-week forecast from latest data."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            forecaster = CashFlowForecaster()
+            result = await forecaster.run(session, run_id)
+        result["run_id"] = str(run_id)
+        return result
+
+    # ── Deferred Revenue endpoints ────────────────────────────────────────────
+
+    @app.post("/runs/{run_id}/contracts")
+    async def create_contract(run_id: uuid.UUID, body: ContractRequest) -> dict:
+        """Create an annual/multi-year contract for GAAP revenue recognition tracking."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            from decimal import Decimal
+            contract = Contract(
+                run_id=run_id,
+                customer_id=body.customer_id,
+                total_value=Decimal(str(body.total_value)),
+                start_date=body.start_date,
+                end_date=body.end_date,
+                payment_terms=body.payment_terms,
+                payment_received_at=body.payment_received_at,
+            )
+            session.add(contract)
+            await session.commit()
+
+            # Auto-compute schedule
+            calc = DeferredRevenueCalculator()
+            schedule = calc.calculate_schedule(contract)
+            await calc._persist_schedule(session, contract.id, schedule)
+
+        return {"status": "ok", "id": str(contract.id), "customer_id": body.customer_id}
+
+    @app.get("/runs/{run_id}/contracts")
+    async def list_contracts(run_id: uuid.UUID) -> list[dict]:
+        """List all contracts for a run."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            rows = (await session.execute(
+                select(Contract).where(Contract.run_id == run_id).order_by(Contract.start_date)
+            )).scalars().all()
+        return [
+            {
+                "id": str(r.id),
+                "customer_id": r.customer_id,
+                "total_value": float(r.total_value),
+                "start_date": str(r.start_date),
+                "end_date": str(r.end_date),
+                "payment_terms": r.payment_terms,
+            }
+            for r in rows
+        ]
+
+    @app.get("/runs/{run_id}/deferred-revenue")
+    async def get_deferred_revenue(run_id: uuid.UUID) -> dict:
+        """Return total deferred revenue balance and 12-month recognition schedule."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            calc = DeferredRevenueCalculator()
+            result = await calc.run(session, run_id)
+        result["run_id"] = str(run_id)
+        return result
+
+    # ── Board Deck endpoints ──────────────────────────────────────────────────
+
+    async def _generate_deck_bg(
+        run_id: uuid.UUID,
+        company_name: str,
+        db_manager: Any,
+    ) -> None:
+        """Background task: generate PowerPoint board deck."""
+        try:
+            async with db_manager.session() as session:
+                generator = BoardDeckGenerator()
+                await generator.run(session, run_id, company_name)
+        except Exception as e:
+            # Mark deck as failed
+            async with db_manager.session() as session:
+                deck = (await session.execute(
+                    select(BoardDeck).where(BoardDeck.run_id == run_id).limit(1)
+                )).scalar_one_or_none()
+                if deck:
+                    deck.status = "failed"
+                    await session.commit()
+
+    @app.post("/runs/{run_id}/board-deck/generate")
+    async def generate_board_deck(
+        run_id: uuid.UUID,
+        background_tasks: BackgroundTasks,
+        company_name: str = "Portfolio Company",
+    ) -> dict:
+        """Trigger async PowerPoint board deck generation."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        # Create a "generating" record immediately
+        async with db_manager.session() as session:
+            existing = (await session.execute(
+                select(BoardDeck).where(BoardDeck.run_id == run_id).limit(1)
+            )).scalar_one_or_none()
+            if existing:
+                existing.status = "generating"
+                await session.commit()
+                deck_id = existing.id
+            else:
+                deck = BoardDeck(run_id=run_id, file_path="", status="generating")
+                session.add(deck)
+                await session.commit()
+                deck_id = deck.id
+
+        background_tasks.add_task(_generate_deck_bg, run_id, company_name, db_manager)
+        return {"deck_id": str(deck_id), "run_id": str(run_id), "status": "generating"}
+
+    @app.get("/runs/{run_id}/board-deck/status")
+    async def board_deck_status(run_id: uuid.UUID) -> dict:
+        """Check the status of a board deck generation."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            deck = (await session.execute(
+                select(BoardDeck).where(BoardDeck.run_id == run_id).order_by(BoardDeck.generated_at.desc()).limit(1)
+            )).scalar_one_or_none()
+
+        if not deck:
+            return {"status": "not_started", "deck_id": None, "run_id": str(run_id)}
+
+        download_url = f"/runs/{run_id}/board-deck/download" if deck.status == "ready" else None
+        return {
+            "deck_id": str(deck.id),
+            "run_id": str(run_id),
+            "status": deck.status,
+            "generated_at": deck.generated_at.isoformat() if deck.generated_at else None,
+            "download_url": download_url,
+        }
+
+    @app.get("/runs/{run_id}/board-deck/download")
+    async def download_board_deck(run_id: uuid.UUID) -> FileResponse:
+        """Download the generated PowerPoint board deck."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            deck = (await session.execute(
+                select(BoardDeck)
+                .where(BoardDeck.run_id == run_id, BoardDeck.status == "ready")
+                .order_by(BoardDeck.generated_at.desc())
+                .limit(1)
+            )).scalar_one_or_none()
+
+        if not deck or not deck.file_path:
+            raise HTTPException(status_code=404, detail="Board deck not ready. Generate it first.")
+
+        import os
+        if not os.path.exists(deck.file_path):
+            raise HTTPException(status_code=404, detail="Deck file not found on disk.")
+
+        return FileResponse(
+            path=deck.file_path,
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            filename=f"board_deck_{run_id}.pptx",
+        )
+
+    # ── Stripe integration endpoints ──────────────────────────────────────────
+
+    @app.get("/integrations/stripe/authorize")
+    async def stripe_authorize() -> dict:
+        """Return the Stripe OAuth authorization URL."""
+        agent = StripeIngestionAgent()
+        return agent.get_authorization_url()
+
+    @app.get("/integrations/stripe/callback")
+    async def stripe_callback(code: str) -> dict:
+        """Handle Stripe OAuth callback — exchange code for access token."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            agent = StripeIngestionAgent()
+            integration = await agent.exchange_code_for_token(session, code)
+        return {"status": "connected", "platform": "stripe", "id": str(integration.id)}
+
+    @app.post("/runs/{run_id}/integrations/stripe/sync")
+    async def stripe_sync(run_id: uuid.UUID) -> dict:
+        """Sync Stripe subscriptions to RawFinancial rows for this run."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            agent = StripeIngestionAgent()
+            result = await agent.sync(session, run_id)
+        result["run_id"] = str(run_id)
+        return result
+
+    @app.get("/integrations/stripe/status")
+    async def stripe_status() -> dict:
+        """Return current Stripe integration status."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            agent = StripeIngestionAgent()
+            return await agent.get_status(session)
+
+    # ── QuickBooks integration endpoints ──────────────────────────────────────
+
+    @app.get("/integrations/quickbooks/authorize")
+    async def quickbooks_authorize() -> dict:
+        """Return the QuickBooks OAuth authorization URL."""
+        agent = QuickBooksIngestionAgent()
+        return agent.get_authorization_url()
+
+    @app.get("/integrations/quickbooks/callback")
+    async def quickbooks_callback(code: str, realmId: str = "") -> dict:
+        """Handle QuickBooks OAuth callback — exchange code for access token."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            agent = QuickBooksIngestionAgent()
+            integration = await agent.exchange_code_for_token(session, code, realmId)
+        return {"status": "connected", "platform": "quickbooks", "id": str(integration.id)}
+
+    @app.post("/runs/{run_id}/integrations/quickbooks/sync")
+    async def quickbooks_sync(run_id: uuid.UUID) -> dict:
+        """Sync QuickBooks P&L to RawFinancial rows for this run."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            agent = QuickBooksIngestionAgent()
+            result = await agent.sync(session, run_id)
+        result["run_id"] = str(run_id)
+        return result
+
+    @app.get("/integrations/quickbooks/status")
+    async def quickbooks_status() -> dict:
+        """Return current QuickBooks integration status."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            agent = QuickBooksIngestionAgent()
+            return await agent.get_status(session)
+
+    @app.get("/integrations/status")
+    async def all_integrations_status() -> list[dict]:
+        """Return status of all integrations (Stripe + QuickBooks)."""
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            stripe_status = await StripeIngestionAgent().get_status(session)
+            qb_status = await QuickBooksIngestionAgent().get_status(session)
+        return [stripe_status, qb_status]
 
     # Attach db_manager to app state so /runs/{run_id}/status can reach it
     @app.on_event("startup")

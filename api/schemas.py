@@ -212,3 +212,115 @@ class HealthResponse(BaseModel):
     status: Literal["ok"]
     db: Literal["connected", "disconnected"]
     models: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Cash Flow Forecast schemas
+# ---------------------------------------------------------------------------
+
+class CashBalanceRequest(BaseModel):
+    balance: Decimal = Field(gt=0, description="Current cash balance in USD")
+    as_of_date: date = Field(default_factory=date.today)
+    source: str = Field(default="manual", max_length=50)
+
+
+class CommittedExpenseRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    amount: Decimal = Field(gt=0, description="Amount per payment period in USD")
+    frequency: Literal["weekly", "monthly", "quarterly", "annual"]
+    next_payment_date: date
+    category: str = Field(default="other", max_length=100)
+
+
+class CashFlowForecastWeek(BaseModel):
+    week_offset: int
+    week_start: date
+    predicted_balance_p10: float
+    predicted_balance_p50: float
+    predicted_balance_p90: float
+    expected_inflows: float
+    expected_outflows: float
+
+
+class CashFlowForecastResponse(BaseModel):
+    run_id: uuid.UUID
+    current_cash: float
+    total_committed_weekly: float
+    weeks_until_zero_p50: int | None
+    forecast: list[CashFlowForecastWeek]
+    committed_expenses: list[dict[str, Any]]
+
+
+# ---------------------------------------------------------------------------
+# Deferred Revenue / Contract schemas
+# ---------------------------------------------------------------------------
+
+class ContractRequest(BaseModel):
+    customer_id: str = Field(min_length=1, max_length=255)
+    total_value: Decimal = Field(gt=0)
+    start_date: date
+    end_date: date
+    payment_terms: Literal["annual", "quarterly", "monthly"] = "annual"
+    payment_received_at: datetime | None = None
+
+
+class ContractResponse(BaseModel):
+    id: uuid.UUID
+    run_id: uuid.UUID
+    customer_id: str
+    total_value: float
+    start_date: date
+    end_date: date
+    payment_terms: str
+
+
+class DeferredRevenueMonth(BaseModel):
+    month_start: date
+    recognized_revenue: float
+    deferred_balance: float
+
+
+class DeferredRevenueResponse(BaseModel):
+    run_id: uuid.UUID
+    total_deferred_balance: float
+    current_month_recognized: float
+    contract_count: int
+    schedule_next_12_months: list[DeferredRevenueMonth]
+    contracts: list[ContractResponse]
+
+
+# ---------------------------------------------------------------------------
+# Board Deck schemas
+# ---------------------------------------------------------------------------
+
+class BoardDeckStatusResponse(BaseModel):
+    deck_id: uuid.UUID
+    run_id: uuid.UUID
+    status: Literal["generating", "ready", "failed"]
+    generated_at: datetime | None = None
+    download_url: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Integration schemas
+# ---------------------------------------------------------------------------
+
+class IntegrationStatusResponse(BaseModel):
+    platform: Literal["stripe", "quickbooks"]
+    status: Literal["active", "pending", "error", "not_connected"]
+    company_name: str | None = None
+    last_sync_at: datetime | None = None
+    rows_synced: int = 0
+
+
+class OAuthAuthorizeResponse(BaseModel):
+    authorization_url: str
+    demo_mode: bool = False
+
+
+class SyncResponse(BaseModel):
+    run_id: uuid.UUID
+    platform: str
+    rows_synced: int
+    status: Literal["success", "error"]
+    message: str = ""

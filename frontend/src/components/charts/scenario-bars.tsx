@@ -80,7 +80,7 @@ export function ScenarioCards({ scenarios }: Props) {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {s.key_risks.length > 0 && (
+              {(s.key_risks?.length ?? 0) > 0 && (
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Key Risks</div>
                   <ul className="space-y-1.5">
@@ -92,7 +92,7 @@ export function ScenarioCards({ scenarios }: Props) {
                   </ul>
                 </div>
               )}
-              {s.recommended_actions.length > 0 && (
+              {(s.recommended_actions?.length ?? 0) > 0 && (
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Actions</div>
                   <ul className="space-y-1.5">

@@ -1,5 +1,9 @@
 import type {
   AnalyzeResponse,
+  BoardDeckStatus,
+  CashFlowSectionData,
+  DeferredRevenueSummary,
+  IntegrationStatus,
   PipelineStatus,
   BoardPrepResponse,
   ReportData,
@@ -157,4 +161,121 @@ export async function getVCMemo(
       ruin_probability_6m: ruinProb6m,
     }),
   });
+}
+
+// ── Cash Flow Forecast ─────────────────────────────────────────────────────
+
+/** Get the 13-week cash flow forecast (auto-computed from KPI + committed expenses) */
+export async function getCashFlow(runId: string): Promise<CashFlowSectionData> {
+  return apiFetch(`/runs/${runId}/forecast/cash-flow`);
+}
+
+/** Set current cash balance */
+export async function setCashBalance(
+  runId: string,
+  balance: number,
+  asOfDate?: string,
+): Promise<void> {
+  await apiFetch(`/runs/${runId}/cash-balance`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ balance, as_of_date: asOfDate ?? new Date().toISOString().split("T")[0] }),
+  });
+}
+
+/** Add a recurring committed expense */
+export async function addCommittedExpense(
+  runId: string,
+  expense: {
+    name: string;
+    amount: number;
+    frequency: "weekly" | "monthly" | "quarterly" | "annual";
+    next_payment_date: string;
+    category?: string;
+  },
+): Promise<void> {
+  await apiFetch(`/runs/${runId}/committed-expenses`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(expense),
+  });
+}
+
+/** Refresh the 13-week forecast from latest data */
+export async function refreshForecast(runId: string): Promise<CashFlowSectionData> {
+  return apiFetch(`/runs/${runId}/forecast/refresh`, { method: "POST" });
+}
+
+// ── Deferred Revenue ───────────────────────────────────────────────────────
+
+/** Get deferred revenue summary and 12-month schedule */
+export async function getDeferredRevenue(runId: string): Promise<DeferredRevenueSummary> {
+  return apiFetch(`/runs/${runId}/deferred-revenue`);
+}
+
+/** Create a new annual/multi-year contract */
+export async function addContract(
+  runId: string,
+  contract: {
+    customer_id: string;
+    total_value: number;
+    start_date: string;
+    end_date: string;
+    payment_terms: "annual" | "quarterly" | "monthly";
+  },
+): Promise<{ id: string; customer_id: string }> {
+  return apiFetch(`/runs/${runId}/contracts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(contract),
+  });
+}
+
+// ── Board Deck ─────────────────────────────────────────────────────────────
+
+/** Trigger async board deck generation */
+export async function generateBoardDeck(
+  runId: string,
+  companyName?: string,
+): Promise<{ deck_id: string; run_id: string; status: string }> {
+  const params = companyName ? `?company_name=${encodeURIComponent(companyName)}` : "";
+  return apiFetch(`/runs/${runId}/board-deck/generate${params}`, { method: "POST" });
+}
+
+/** Poll board deck generation status */
+export async function getBoardDeckStatus(runId: string): Promise<BoardDeckStatus> {
+  return apiFetch(`/runs/${runId}/board-deck/status`);
+}
+
+/** Return the download URL for the generated board deck */
+export function getBoardDeckDownloadUrl(runId: string): string {
+  const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  return `${BASE}/runs/${runId}/board-deck/download`;
+}
+
+// ── Integrations ───────────────────────────────────────────────────────────
+
+/** Get status of all integrations */
+export async function getIntegrations(): Promise<IntegrationStatus[]> {
+  return apiFetch("/integrations/status");
+}
+
+/** Get Stripe OAuth authorization URL */
+export async function getStripeAuthUrl(): Promise<{ authorization_url: string; demo_mode: boolean }> {
+  return apiFetch("/integrations/stripe/authorize");
+}
+
+/** Get QuickBooks OAuth authorization URL */
+export async function getQuickBooksAuthUrl(): Promise<{ authorization_url: string; demo_mode: boolean }> {
+  return apiFetch("/integrations/quickbooks/authorize");
+}
+
+/** Sync Stripe data for a run */
+export async function syncStripe(runId: string): Promise<{ rows_synced: number; status: string; message: string }> {
+  return apiFetch(`/runs/${runId}/integrations/stripe/sync`, { method: "POST" });
+}
+
+/** Sync QuickBooks data for a run */
+export async function syncQuickBooks(runId: string): Promise<{ rows_synced: number; status: string; message: string }> {
+  return apiFetch(`/runs/${runId}/integrations/quickbooks/sync`, { method: "POST" });
 }

@@ -124,3 +124,80 @@ export interface InvestorUpdateData {
   asks: string[];
   closing: string;
 }
+
+// ── Cash Flow Forecast ─────────────────────────────────────────────────────
+
+export interface CashFlowForecastWeek {
+  week_offset: number;
+  week_start: string;
+  predicted_balance_p10: number;
+  predicted_balance_p50: number;
+  predicted_balance_p90: number;
+  expected_inflows: number;
+  expected_outflows: number;
+}
+
+export interface CashFlowCommittedExpense {
+  id: string;
+  name: string;
+  amount: number;
+  frequency: "weekly" | "monthly" | "quarterly" | "annual";
+  next_payment_date: string;
+  category: string;
+}
+
+export interface CashFlowSectionData {
+  run_id: string;
+  current_cash: number;
+  total_committed_weekly: number;
+  weeks_until_zero_p50: number | null;
+  forecast: CashFlowForecastWeek[];
+  committed_expenses: CashFlowCommittedExpense[];
+}
+
+// ── Deferred Revenue ───────────────────────────────────────────────────────
+
+export interface DeferredRevenueMonth {
+  month_start: string;
+  recognized_revenue: number;
+  deferred_balance: number;
+}
+
+export interface ContractItem {
+  id: string;
+  run_id: string;
+  customer_id: string;
+  total_value: number;
+  start_date: string;
+  end_date: string;
+  payment_terms: string;
+}
+
+export interface DeferredRevenueSummary {
+  run_id: string;
+  total_deferred_balance: number;
+  current_month_recognized: number;
+  contract_count: number;
+  schedule_next_12_months: DeferredRevenueMonth[];
+  contracts: ContractItem[];
+}
+
+// ── Board Deck ─────────────────────────────────────────────────────────────
+
+export interface BoardDeckStatus {
+  deck_id: string | null;
+  run_id: string;
+  status: "not_started" | "generating" | "ready" | "failed";
+  generated_at: string | null;
+  download_url: string | null;
+}
+
+// ── Integrations ───────────────────────────────────────────────────────────
+
+export interface IntegrationStatus {
+  platform: "stripe" | "quickbooks";
+  status: "active" | "pending" | "error" | "not_connected";
+  company_name?: string;
+  last_sync_at: string | null;
+  rows_synced: number;
+}

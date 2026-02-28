@@ -149,13 +149,23 @@ smb_schedule = []
 smb_names = SMB_BASE + [
     "startup_b", "figma_startup", "smallbiz_a", "launch_n", "test_zz",
     "pilot_rr", "alpha_ss", "beta_tt", "gamma_uu", "delta_vv",
-    "epsilon_ww", "zeta_xx",
+    "epsilon_ww", "zeta_xx", "growth_rr",
 ]
+# Some SMBs churn in recent weeks to make KPIs realistic
+SMB_LATE_CHURNS = {
+    0:  65,   # "company_c"   joins wk 28, churns wk 65
+    8:  70,   # "scale_l"     joins wk 36, churns wk 70
+    16: 74,   # SMB_BASE[16]  joins wk 44, churns wk 74
+    23: 77,   # SMB_BASE[23]  joins wk 51, churns wk 77
+    31: 78,   # SMB_BASE[31]  joins wk 59, churns wk 78 (latest — shows in KPI)
+}
+
 smb_idx = 0
 for wk in range(28, NUM_WEEKS + 1):
     if smb_idx < len(smb_names):
         base_rate = random.uniform(105, 165)
-        smb_schedule.append((smb_names[smb_idx], base_rate, wk, None))
+        churn_wk = SMB_LATE_CHURNS.get(smb_idx, None)
+        smb_schedule.append((smb_names[smb_idx], base_rate, wk, churn_wk))
         smb_idx += 1
 
 all_customers = enterprise_schedule + midmarket_schedule + smb_schedule

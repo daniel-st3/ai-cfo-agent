@@ -144,16 +144,34 @@
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .animate-fade-in-up {
-    animation: fadeInUp 0.5s ease forwards;
-  }
+  .animate-fade-in-up { animation: fadeInUp 0.5s ease forwards; }
 
   @keyframes scaleIn {
     from { opacity: 0; transform: scale(0.96); }
     to   { opacity: 1; transform: scale(1); }
   }
-  .animate-scale-in {
-    animation: scaleIn 0.4s ease forwards;
+  .animate-scale-in { animation: scaleIn 0.4s ease forwards; }
+
+  /* ── KPI number pop (spring bounce) ───────────────────────────── */
+  @keyframes numberPop {
+    0%   { opacity: 0; transform: translateY(10px) scale(0.88); }
+    55%  { transform: translateY(-3px) scale(1.06); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .animate-number-pop {
+    animation: numberPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* ── Shimmer skeleton ──────────────────────────────────────────── */
+  @keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position: 600px 0; }
+  }
+  .skeleton-shimmer {
+    background: linear-gradient(90deg, #f0f0f5 20%, #e6e6ec 50%, #f0f0f5 80%);
+    background-size: 1200px 100%;
+    animation: shimmer 1.7s ease-in-out infinite;
+    border-radius: 1rem;
   }
 
   /* Gradient text */
@@ -172,30 +190,41 @@
     75%      { transform: translate(12px, 32px) scale(1.03); }
   }
   .bg-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(90px);
-    animation: blob-drift ease-in-out infinite;
-    pointer-events: none;
+    position: absolute; border-radius: 50%; filter: blur(90px);
+    animation: blob-drift ease-in-out infinite; pointer-events: none;
   }
 
-  /* ── Scroll-triggered section animations ──────────────────────── */
+  /* ── Scroll-triggered section animations — spring easing ──────── */
   .section-enter {
     opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.55s ease, transform 0.55s ease;
+    transform: translateY(32px) scale(0.982);
+    filter: blur(4px);
+    transition:
+      opacity   0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      filter    0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .section-enter.is-visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 
-  /* Stagger delays for cards within a section */
-  .stagger-1 { transition-delay: 60ms; }
-  .stagger-2 { transition-delay: 120ms; }
-  .stagger-3 { transition-delay: 180ms; }
-  .stagger-4 { transition-delay: 240ms; }
-  .stagger-5 { transition-delay: 300ms; }
-  .stagger-6 { transition-delay: 360ms; }
-  .stagger-7 { transition-delay: 420ms; }
+  /* Stagger delays — snappy */
+  .stagger-1 { transition-delay: 40ms; }
+  .stagger-2 { transition-delay: 80ms; }
+  .stagger-3 { transition-delay: 120ms; }
+  .stagger-4 { transition-delay: 160ms; }
+  .stagger-5 { transition-delay: 200ms; }
+  .stagger-6 { transition-delay: 240ms; }
+  .stagger-7 { transition-delay: 280ms; }
+
+  /* ── Card hover lift ───────────────────────────────────────────── */
+  .card-hover {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .card-hover:hover {
+    box-shadow: 0 8px 28px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
+  }
 }
