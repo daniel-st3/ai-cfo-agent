@@ -37,7 +37,8 @@ export function GrossMarginChart({ snapshots }: Props) {
                  tick={{ fontSize: 9, fill: "#9ca3af" }} tickFormatter={v => `${v}%`} domain={[0, 100]} width={36} />
           <ReferenceLine y={60} stroke="#0071e3" strokeDasharray="4 2" strokeWidth={1.5} />
           <ChartTooltip content={<ChartTooltipContent formatter={(v) => `${v}%`} indicator="dot" />} />
-          <Bar dataKey="gross_margin" radius={[3, 3, 0, 0]}>
+          <Bar dataKey="gross_margin" radius={[3, 3, 0, 0]}
+            animationDuration={900} animationEasing="ease-out" animationBegin={150}>
             {data.map((entry, i) => (
               <Cell key={i} fill={entry.gross_margin >= 60 ? "#34c759" : entry.gross_margin >= 40 ? "#ff9500" : "#ff3b30"} fillOpacity={0.85} />
             ))}

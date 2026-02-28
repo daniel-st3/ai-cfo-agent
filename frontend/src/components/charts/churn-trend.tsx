@@ -45,7 +45,8 @@ export function ChurnTrendChart({ snapshots }: Props) {
           <ReferenceArea y1={5} y2={100} fill="#ff3b30" fillOpacity={0.06} />
           <ReferenceLine y={5} stroke="#ff3b30" strokeDasharray="4 2" strokeWidth={1} />
           <ChartTooltip content={<ChartTooltipContent formatter={(v) => `${v}%`} indicator="dot" />} />
-          <Line dataKey="churn_rate" stroke="#ff9500" strokeWidth={2.5} dot={false} />
+          <Line dataKey="churn_rate" stroke="#ff9500" strokeWidth={2.5} dot={false}
+            animationDuration={1000} animationEasing="ease-out" animationBegin={100} />
         </LineChart>
       </ChartContainer>
 

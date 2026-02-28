@@ -60,9 +60,12 @@ export function RevenueAreaChart({ snapshots }: Props) {
           <YAxis tickLine={false} axisLine={false}
                  tick={{ fontSize: 10, fill: "#9ca3af" }} tickFormatter={fmtK} width={52} />
           <ChartTooltip content={<ChartTooltipContent formatter={(v) => fmtK(Number(v))} indicator="dot" />} />
-          <Area dataKey="mrr"       type="monotone" fill="url(#fillMrr)"  stroke="#0071e3" strokeWidth={2.5} dot={false} />
-          <Area dataKey="burn_rate" type="monotone" fill="url(#fillBurn)" stroke="#ff3b30" strokeWidth={2}   dot={false} strokeDasharray="5 3" />
-          <Area dataKey="arr"       type="monotone" fill="none"           stroke="#6366f1" strokeWidth={1.5} dot={false} />
+          <Area dataKey="mrr"       type="monotone" fill="url(#fillMrr)"  stroke="#0071e3" strokeWidth={2.5} dot={false}
+            animationDuration={1200} animationEasing="ease-out" animationBegin={100} />
+          <Area dataKey="burn_rate" type="monotone" fill="url(#fillBurn)" stroke="#ff3b30" strokeWidth={2}   dot={false} strokeDasharray="5 3"
+            animationDuration={1400} animationEasing="ease-out" animationBegin={200} />
+          <Area dataKey="arr"       type="monotone" fill="none"           stroke="#6366f1" strokeWidth={1.5} dot={false}
+            animationDuration={1600} animationEasing="ease-out" animationBegin={300} />
           <ChartLegend content={<ChartLegendContent />} />
         </AreaChart>
       </ChartContainer>

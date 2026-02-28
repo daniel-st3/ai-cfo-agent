@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import { RadialBar, RadialBarChart, PolarGrid, PolarRadiusAxis, Label } from "recharts";
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 import type { SurvivalAnalysis } from "@/lib/types";
@@ -33,6 +34,24 @@ export function SurvivalRadialChart({ survival }: Props) {
   const config: ChartConfig = { score: { label: "Survival Score", color } };
   const data = [{ score, fill: color }];
 
+  // Count-up animation for the displayed score
+  const [displayScore, setDisplayScore] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const duration = 1200;
+    const startTime = performance.now();
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * score);
+      setDisplayScore(current);
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [score]);
+
   const ruinColor = (pct: number) =>
     pct < 0.05 ? "text-green-600" : pct < 0.2 ? "text-amber-600" : "text-red-600";
 
@@ -47,14 +66,15 @@ export function SurvivalRadialChart({ survival }: Props) {
         <RadialBarChart data={data} startAngle={90} endAngle={90 - (360 * score / 100)} innerRadius={65} outerRadius={88}>
           <PolarGrid gridType="circle" radialLines={false} stroke="none"
             className="first:fill-gray-100 last:fill-white" polarRadius={[70, 60]} />
-          <RadialBar dataKey="score" background={{ fill: "#f3f4f6" }} cornerRadius={8} />
+          <RadialBar dataKey="score" background={{ fill: "#f3f4f6" }} cornerRadius={8}
+            animationDuration={1200} animationEasing="ease-out" animationBegin={100} />
           <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
             <Label content={({ viewBox }) => {
               if (!viewBox || !("cx" in viewBox)) return null;
               return (
                 <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
                   <tspan x={viewBox.cx} y={(viewBox.cy ?? 0) - 5} fill="#1d1d1f" fontSize={38} fontWeight={700} fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif">
-                    {score}
+                    {displayScore}
                   </tspan>
                   <tspan x={viewBox.cx} y={(viewBox.cy ?? 0) + 18} fill="#8e8e93" fontSize={11}>
                     / 100

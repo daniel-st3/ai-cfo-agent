@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useMouse } from "@/hooks/use-mouse";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Sparkles, Zap, FileText, Loader2,
@@ -57,7 +58,7 @@ function KPICard({ label, value, wow, sub, valueColor }: KPICardProps) {
   const up   = wow !== undefined && wow > 0.0001;
   const down = wow !== undefined && wow < -0.0001;
   return (
-    <div className="card-metric card-hover p-4 flex flex-col gap-1 h-full">
+    <div className="card-metric card-hover tilt-card relative p-4 flex flex-col gap-1 h-full group cursor-default overflow-hidden">
       <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 truncate">{label}</div>
       <div key={value} className={`text-2xl font-bold leading-none truncate mt-0.5 animate-number-pop ${valueColor ?? "text-gray-900"}`}>{value}</div>
       {wow !== undefined && (
@@ -67,6 +68,9 @@ function KPICard({ label, value, wow, sub, valueColor }: KPICardProps) {
         </div>
       )}
       {sub && <div className="text-[10px] text-gray-400 mt-0.5 leading-snug">{sub}</div>}
+      {/* Shimmer on hover */}
+      <div className="absolute inset-0 rounded-[inherit] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
+        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%)", backgroundSize: "200% 200%", backgroundPosition: "120% 120%" }} />
     </div>
   );
 }
@@ -75,6 +79,8 @@ export default function RunPage() {
   const { runId } = useParams<{ runId: string }>();
   const router    = useRouter();
   const mainRef   = useRef<HTMLDivElement>(null);
+  const mouse     = useMouse();
+  const [scrollPct, setScrollPct] = useState(0);
 
   /* ── Core state ───────────────────────────────────────────────── */
   const [snapshots,   setSnapshots]   = useState<KPISnapshot[]>([]);
@@ -102,7 +108,18 @@ export default function RunPage() {
   /* ── Modal state ─────────────────────────────────────────────── */
   const [showIntegrationsModal, setShowIntegrationsModal] = useState(false);
 
-  /* ── Scroll-triggered animations ─────────────────────────────── */
+  /* ── Scroll progress bar ─────────────────────────────────────── */
+  useEffect(() => {
+    const onScroll = () => {
+      const el  = document.documentElement;
+      const pct = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100;
+      setScrollPct(isNaN(pct) ? 0 : pct);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* ── Scroll-triggered animations (runs once when loading finishes) */
   useEffect(() => {
     const container = mainRef.current;
     if (!container) return;
@@ -114,11 +131,11 @@ export default function RunPage() {
           obs.unobserve(e.target);
         }
       }),
-      { threshold: 0.08 }
+      { threshold: 0.06, rootMargin: "0px 0px -40px 0px" }
     );
     elements.forEach(el => obs.observe(el));
     return () => obs.disconnect();
-  });
+  }, [loading]);
 
   /* ── Data loading ─────────────────────────────────────────────── */
   useEffect(() => {
@@ -187,6 +204,16 @@ export default function RunPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "#f5f5f7" }}>
+
+      {/* ── Scroll progress bar ─────────────────────────────────────── */}
+      <div className="scroll-progress" style={{ width: `${scrollPct}%` }} />
+
+      {/* ── Cursor glow (desktop only) ──────────────────────────────── */}
+      <div className="cursor-glow hidden lg:block" style={{
+        left: mouse.clientX,
+        top:  mouse.clientY,
+        opacity: mouse.clientX === 0 ? 0 : 0.7,
+      }} />
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur-md px-6 py-3 flex items-center justify-between gap-4">

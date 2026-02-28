@@ -45,7 +45,8 @@ export function ScenarioBarsChart({ scenarios }: Props) {
           <YAxis tickLine={false} axisLine={false}
                  tick={{ fontSize: 10, fill: "#9ca3af" }} tickFormatter={v => `${v}mo`} width={36} />
           <ChartTooltip content={<ChartTooltipContent formatter={(v) => `${v} months`} />} />
-          <Bar dataKey="months_runway" radius={[6, 6, 0, 0]}>
+          <Bar dataKey="months_runway" radius={[6, 6, 0, 0]}
+            animationDuration={1000} animationEasing="ease-out" animationBegin={200}>
             {data.map((entry, i) => (
               <Cell key={i} fill={entry.fill} fillOpacity={0.9} />
             ))}

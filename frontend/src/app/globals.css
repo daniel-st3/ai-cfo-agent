@@ -5,33 +5,31 @@
 @layer base {
   :root {
     /* ── Apple-inspired light palette ────────────────────────────── */
-    --background:        #f5f5f7;   /* Apple site grey */
-    --foreground:        #1d1d1f;   /* Apple near-black */
+    --background:        #f5f5f7;
+    --foreground:        #1d1d1f;
     --card:              #ffffff;
     --card-foreground:   #1d1d1f;
-    --border:            #d2d2d7;   /* Apple subtle border */
+    --border:            #d2d2d7;
     --border-light:      #e8e8ed;
     --muted:             #f5f5f7;
-    --muted-foreground:  #6e6e73;   /* Apple secondary label */
-    --accent:            #0071e3;   /* Apple blue */
+    --muted-foreground:  #6e6e73;
+    --accent:            #0071e3;
     --accent-foreground: #ffffff;
-    --destructive:       #ff3b30;   /* Apple red */
-    --success:           #34c759;   /* Apple green */
-    --warning:           #ff9500;   /* Apple orange */
+    --destructive:       #ff3b30;
+    --success:           #34c759;
+    --warning:           #ff9500;
     --primary:           #1d1d1f;
     --primary-foreground:#ffffff;
     --ring:              #0071e3;
     --radius:            0.875rem;
 
-    /* Chart palette — rich, readable on white */
-    --chart-1: #0071e3;   /* apple blue */
-    --chart-2: #34c759;   /* apple green */
-    --chart-3: #ff3b30;   /* apple red */
-    --chart-4: #ff9500;   /* apple orange */
-    --chart-5: #af52de;   /* apple purple */
-    --chart-6: #5ac8fa;   /* apple teal */
+    --chart-1: #0071e3;
+    --chart-2: #34c759;
+    --chart-3: #ff3b30;
+    --chart-4: #ff9500;
+    --chart-5: #af52de;
+    --chart-6: #5ac8fa;
 
-    /* Recharts data-key color vars */
     --color-mrr:        #0071e3;
     --color-arr:        #6366f1;
     --color-burn_rate:  #ff3b30;
@@ -60,7 +58,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Monospace numbers — for KPI values */
   .font-num {
     font-family: "SF Mono", var(--font-geist-mono), ui-monospace, "Cascadia Code",
                  "Fira Code", Consolas, monospace;
@@ -76,7 +73,6 @@
   ::-webkit-scrollbar-thumb:hover { background: #aeaeb2; }
 
   /* ── Card surfaces ─────────────────────────────────────────────── */
-  /* Standard card — white, subtle shadow */
   .card-surface {
     background: var(--card);
     border: 1px solid var(--border-light);
@@ -84,7 +80,6 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   }
 
-  /* Slightly more prominent card */
   .card-brutal {
     background: var(--card);
     border: 1px solid var(--border);
@@ -92,17 +87,27 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   }
 
-  /* Hero metric card */
   .card-metric {
     background: var(--card);
     border: 1px solid var(--border-light);
     border-radius: var(--radius);
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                transform   0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .card-metric:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
+  }
+
+  /* ── 3D Tilt card — perspective hover effect ───────────────────── */
+  .tilt-card {
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tilt-card:hover {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.08);
   }
 
   /* Status dots */
@@ -125,7 +130,7 @@
   .pill-amber  { @apply pill bg-amber-50 text-amber-700 border border-amber-200; }
   .pill-gray   { @apply pill bg-gray-100 text-gray-500 border border-gray-200; }
 
-  /* ── Recharts overrides for light theme ────────────────────────── */
+  /* ── Recharts overrides ─────────────────────────────────────────── */
   .recharts-cartesian-grid-horizontal line,
   .recharts-cartesian-grid-vertical line {
     stroke: #f0f0f5 !important;
@@ -136,41 +141,49 @@
     border: 1px solid #d2d2d7 !important;
     border-radius: 10px !important;
     font-size: 12px !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+    backdrop-filter: blur(8px) !important;
   }
 
-  /* ── Fade-in animations ────────────────────────────────────────── */
+  /* ── Keyframes ──────────────────────────────────────────────────── */
+
   @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
   }
-  .animate-fade-in-up { animation: fadeInUp 0.5s ease forwards; }
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 
   @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.96); }
+    from { opacity: 0; transform: scale(0.94); }
     to   { opacity: 1; transform: scale(1); }
   }
-  .animate-scale-in { animation: scaleIn 0.4s ease forwards; }
+  .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-  /* ── KPI number pop (spring bounce) ───────────────────────────── */
+  /* KPI number pop — spring bounce */
   @keyframes numberPop {
-    0%   { opacity: 0; transform: translateY(10px) scale(0.88); }
-    55%  { transform: translateY(-3px) scale(1.06); }
+    0%   { opacity: 0; transform: translateY(12px) scale(0.84); }
+    55%  { transform: translateY(-4px) scale(1.08); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
   .animate-number-pop {
-    animation: numberPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: numberPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 
-  /* ── Shimmer skeleton ──────────────────────────────────────────── */
+  /* Shimmer skeleton */
   @keyframes shimmer {
-    0%   { background-position: -600px 0; }
-    100% { background-position: 600px 0; }
+    0%   { background-position: -800px 0; }
+    100% { background-position:  800px 0; }
   }
   .skeleton-shimmer {
-    background: linear-gradient(90deg, #f0f0f5 20%, #e6e6ec 50%, #f0f0f5 80%);
-    background-size: 1200px 100%;
-    animation: shimmer 1.7s ease-in-out infinite;
+    background: linear-gradient(90deg,
+      #f0f0f5 0%, #f0f0f5 20%,
+      #e4e4ec 50%,
+      #f0f0f5 80%, #f0f0f5 100%
+    );
+    background-size: 1600px 100%;
+    animation: shimmer 2s ease-in-out infinite;
     border-radius: 1rem;
   }
 
@@ -185,24 +198,25 @@
   /* ── Animated background blobs ─────────────────────────────────── */
   @keyframes blob-drift {
     0%,100% { transform: translate(0, 0) scale(1); }
-    25%      { transform: translate(24px, -40px) scale(1.06); }
-    50%      { transform: translate(-18px, 22px) scale(0.94); }
-    75%      { transform: translate(12px, 32px) scale(1.03); }
+    25%      { transform: translate(28px, -48px) scale(1.07); }
+    50%      { transform: translate(-22px, 26px) scale(0.93); }
+    75%      { transform: translate(14px, 38px) scale(1.04); }
   }
   .bg-blob {
     position: absolute; border-radius: 50%; filter: blur(90px);
     animation: blob-drift ease-in-out infinite; pointer-events: none;
+    will-change: transform;
   }
 
-  /* ── Scroll-triggered section animations — spring easing ──────── */
+  /* ── Scroll-triggered section entrance — spring easing ─────────── */
   .section-enter {
     opacity: 0;
-    transform: translateY(32px) scale(0.982);
-    filter: blur(4px);
+    transform: translateY(36px) scale(0.980);
+    filter: blur(6px);
     transition:
-      opacity   0.7s cubic-bezier(0.16, 1, 0.3, 1),
-      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-      filter    0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity   0.75s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+      filter    0.55s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .section-enter.is-visible {
     opacity: 1;
@@ -210,21 +224,151 @@
     filter: blur(0);
   }
 
-  /* Stagger delays — snappy */
+  /* Stagger delays */
   .stagger-1 { transition-delay: 40ms; }
-  .stagger-2 { transition-delay: 80ms; }
-  .stagger-3 { transition-delay: 120ms; }
-  .stagger-4 { transition-delay: 160ms; }
-  .stagger-5 { transition-delay: 200ms; }
-  .stagger-6 { transition-delay: 240ms; }
-  .stagger-7 { transition-delay: 280ms; }
+  .stagger-2 { transition-delay: 85ms; }
+  .stagger-3 { transition-delay: 130ms; }
+  .stagger-4 { transition-delay: 175ms; }
+  .stagger-5 { transition-delay: 220ms; }
+  .stagger-6 { transition-delay: 265ms; }
+  .stagger-7 { transition-delay: 310ms; }
 
   /* ── Card hover lift ───────────────────────────────────────────── */
   .card-hover {
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition:
+      box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+      transform  0.28s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.2s ease;
   }
   .card-hover:hover {
-    box-shadow: 0 8px 28px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
-    transform: translateY(-2px);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.11), 0 3px 10px rgba(0,0,0,0.07);
+    transform: translateY(-3px);
+    border-color: #c7c7cc;
   }
+
+  /* ── Chart entry animation ──────────────────────────────────────── */
+  @keyframes chartFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .chart-enter {
+    animation: chartFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* ── Scroll progress bar ────────────────────────────────────────── */
+  .scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2.5px;
+    background: linear-gradient(90deg, #0071e3, #6366f1, #34c759);
+    z-index: 9999;
+    transform-origin: left;
+    border-radius: 0 2px 2px 0;
+    box-shadow: 0 0 8px rgba(0, 113, 227, 0.4);
+    pointer-events: none;
+    transition: width 0.1s linear;
+  }
+
+  /* ── Cursor glow ────────────────────────────────────────────────── */
+  .cursor-glow {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at center,
+      rgba(0, 113, 227, 0.06) 0%,
+      transparent 65%
+    );
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease, opacity 0.3s ease;
+    mix-blend-mode: multiply;
+  }
+
+  /* ── Magnetic button effect ─────────────────────────────────────── */
+  .btn-magnetic {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-magnetic:hover {
+    box-shadow: 0 8px 24px rgba(0, 113, 227, 0.25);
+    transform: translateY(-1px) scale(1.02);
+  }
+  .btn-magnetic:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* ── Section reveal pulse ────────────────────────────────────────── */
+  @keyframes revealPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.08); }
+    70%  { box-shadow: 0 0 0 12px rgba(0, 113, 227, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0); }
+  }
+  .section-enter.is-visible > .card-brutal {
+    animation: revealPulse 0.8s ease-out 0.3s;
+  }
+
+  /* ── Floating number count-up ───────────────────────────────────── */
+  @keyframes countFloat {
+    0%   { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .count-float {
+    animation: countFloat 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* ── Glow on hover for interactive elements ──────────────────────── */
+  .glow-blue:hover {
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15),
+                0 4px 16px rgba(0, 113, 227, 0.2);
+  }
+  .glow-green:hover {
+    box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.15),
+                0 4px 16px rgba(52, 199, 89, 0.2);
+  }
+  .glow-red:hover {
+    box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.15),
+                0 4px 16px rgba(255, 59, 48, 0.2);
+  }
+
+  /* ── Interactive chart tooltip ──────────────────────────────────── */
+  .chart-tooltip {
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06) !important;
+    padding: 10px 14px !important;
+    font-size: 12px !important;
+  }
+
+  /* ── Hero section gradient sweep ───────────────────────────────── */
+  @keyframes gradientSweep {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .gradient-sweep {
+    background-size: 200% 200%;
+    animation: gradientSweep 6s ease infinite;
+  }
+
+  /* ── Pulsing dot for live indicator ─────────────────────────────── */
+  @keyframes livePing {
+    0%   { transform: scale(1); opacity: 1; }
+    75%  { transform: scale(2.2); opacity: 0; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  .live-dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: currentColor;
+    animation: livePing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .live-dot { position: relative; display: inline-block; }
 }

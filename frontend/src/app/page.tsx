@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMouse } from "@/hooks/use-mouse";
 import {
   Sparkles, Zap, ArrowRight, AlertCircle, TrendingUp,
   BarChart3, Shield, Brain, Upload, ChevronDown, Lock,
@@ -69,6 +70,7 @@ const FEATURES = [
 
 export default function HomePage() {
   const router = useRouter();
+  const mouse  = useMouse();
   const [phase, setPhase]               = useState<Phase>("idle");
   const [file,  setFile]                = useState<File | null>(null);
   const [companyName, setCompanyName]   = useState("");
@@ -227,12 +229,34 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: "linear-gradient(180deg, #ffffff 0%, #f5f5f7 60%)" }}>
 
-      {/* ── Animated gradient blobs ──────────────────────────────────────── */}
+      {/* ── Animated gradient blobs + mouse parallax ─────────────────────── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        <div className="bg-blob" style={{ width: 700, height: 700, background: "#0071e3", opacity: 0.07, top: -200, left: -200, animationDuration: "14s" }} />
-        <div className="bg-blob" style={{ width: 550, height: 550, background: "#6366f1", opacity: 0.06, top: "35%", right: -180, animationDuration: "18s", animationDelay: "-5s" }} />
-        <div className="bg-blob" style={{ width: 450, height: 450, background: "#34c759", opacity: 0.05, bottom: -120, left: "30%", animationDuration: "12s", animationDelay: "-9s" }} />
+        <div className="bg-blob" style={{
+          width: 700, height: 700, background: "#0071e3", opacity: 0.07,
+          top: -200, left: -200, animationDuration: "14s",
+          transform: `translate(${mouse.x * -28}px, ${mouse.y * -18}px) scale(1)`,
+          transition: "transform 1.1s cubic-bezier(0.16, 1, 0.3, 1)",
+        }} />
+        <div className="bg-blob" style={{
+          width: 550, height: 550, background: "#6366f1", opacity: 0.06,
+          top: "35%", right: -180, animationDuration: "18s", animationDelay: "-5s",
+          transform: `translate(${mouse.x * 18}px, ${mouse.y * 22}px) scale(1)`,
+          transition: "transform 0.9s cubic-bezier(0.16, 1, 0.3, 1)",
+        }} />
+        <div className="bg-blob" style={{
+          width: 450, height: 450, background: "#34c759", opacity: 0.05,
+          bottom: -120, left: "30%", animationDuration: "12s", animationDelay: "-9s",
+          transform: `translate(${mouse.x * 12}px, ${mouse.y * -14}px) scale(1)`,
+          transition: "transform 1.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        }} />
       </div>
+
+      {/* ── Cursor glow ─────────────────────────────────────────────── */}
+      <div className="cursor-glow hidden lg:block" style={{
+        left: mouse.clientX,
+        top:  mouse.clientY,
+        opacity: mouse.clientX === 0 ? 0 : 1,
+      }} />
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <header className="relative px-8 py-5 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">
