@@ -72,6 +72,10 @@
   ::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #aeaeb2; }
 
+  /* ── Hide scrollbar (for nav pills) ───────────────────────────── */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
   /* ── Card surfaces ─────────────────────────────────────────────── */
   .card-surface {
     background: var(--card);

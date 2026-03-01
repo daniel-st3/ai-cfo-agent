@@ -17,7 +17,8 @@ import { ChurnTrendChart }               from "@/components/charts/churn-trend";
 import { MonteCarloFan }                 from "@/components/charts/monte-carlo-fan";
 import { AnomalyMLPanel }               from "@/components/anomaly-ml-panel";
 import { MarketIntelligence }            from "@/components/market-intelligence";
-import { RunwayClock }                   from "@/components/runway-clock";
+import { RunwayExplorer }                from "@/components/runway-explorer";
+import { DashboardNav }                 from "@/components/dashboard-nav";
 import { BoardPrep }                     from "@/components/board-prep";
 import { CFOReport }                     from "@/components/cfo-report";
 import { VCMemo }                        from "@/components/vc-memo";
@@ -396,6 +397,22 @@ export default function RunPage() {
         />
       )}
 
+      {/* ── Section Navigation ──────────────────────────────────────── */}
+      <DashboardNav
+        latest={latest ?? null}
+        survival={survival}
+        scenarios={scenarios}
+        monthsRunway={
+          scenarios.find(s => s.scenario === "base")?.months_runway
+          ?? (survival ? survival.expected_zero_cash_day / 30.44 : 0)
+        }
+        anomalyCount={anomalies.length}
+        fraudHighCount={fraudAlerts.filter(a => a.severity === "HIGH").length}
+        customerCount={customerProfiles.length}
+        signalCount={signals.length}
+        fundraisingScore={fundraisingScore?.overall ?? null}
+      />
+
       {/* ── Content ────────────────────────────────────────────────── */}
       <main ref={mainRef} className="mx-auto max-w-screen-xl px-4 sm:px-6 py-10 space-y-14">
 
@@ -404,7 +421,7 @@ export default function RunPage() {
         )}
 
         {/* 1 · KPI COMMAND CENTER ─────────────────────────────────── */}
-        <section className="section-enter">
+        <section id="sec-kpi" className="section-enter">
           <SectionHeading label="KPI Command Center"
             sub={latest ? `Week of ${latest.week_start} · ${snapshots.length} weekly periods` : undefined} />
           {loading ? (
@@ -441,10 +458,10 @@ export default function RunPage() {
           )}
         </section>
 
-        {/* 2 · RUNWAY COUNTDOWN ───────────────────────────────────── */}
+        {/* 2 · RUNWAY EXPLORER ────────────────────────────────────── */}
         {!loading && survival && (
-          <section className="section-enter">
-            <RunwayClock
+          <section id="sec-runway" className="section-enter">
+            <RunwayExplorer
               monthsRunway={
                 scenarios.find(s => s.scenario === "base")?.months_runway
                 ?? (survival.expected_zero_cash_day / 30.44)
@@ -456,7 +473,7 @@ export default function RunPage() {
         )}
 
         {/* 3 · 13-WEEK CASH FLOW FORECAST ─────────────────────────── */}
-        <section className="section-enter">
+        <section id="sec-forecast" className="section-enter">
           <SectionHeading
             label="13-Week Cash Position Forecast"
             sub="P10 / P50 / P90 balance bands · Monte Carlo N=500 · committed outflows"
@@ -465,7 +482,7 @@ export default function RunPage() {
         </section>
 
         {/* 4 · REVENUE & SURVIVAL ─────────────────────────────────── */}
-        <section className="section-enter">
+        <section id="sec-revenue" className="section-enter">
           <SectionHeading label="Revenue & Survival" sub="MRR · ARR · burn rate trends · Monte Carlo survival score" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-stretch">
             <div className="lg:col-span-2 flex flex-col">
@@ -494,7 +511,7 @@ export default function RunPage() {
         )}
 
         {/* 6 · COMPETITIVE INTELLIGENCE ───────────────────────────── */}
-        <section className="section-enter">
+        <section id="sec-intel" className="section-enter">
           <SectionHeading label="Competitive Intelligence"
             sub="Real-time competitor signals · pricing changes · hiring signals · market news" />
           {loading ? <Skel h="h-64" /> : (
@@ -504,7 +521,7 @@ export default function RunPage() {
 
         {/* 7 · SCENARIO STRESS TEST ───────────────────────────────── */}
         {!loading && scenarios.length > 0 && (
-          <section className="section-enter">
+          <section id="sec-scenarios" className="section-enter">
             <SectionHeading label="Scenario Stress Test" sub="Bear · Base · Bull runway forecasts · Series A readiness" />
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-stretch">
               <ScenarioBarsChart scenarios={scenarios} />
@@ -514,7 +531,7 @@ export default function RunPage() {
         )}
 
         {/* 8 · FINANCIAL DEEP DIVE ────────────────────────────────── */}
-        <section className="section-enter">
+        <section id="sec-deepdive" className="section-enter">
           <SectionHeading label="Financial Deep Dive"
             sub="Gross margin · churn rate · ruin probability · deferred revenue" />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
@@ -534,21 +551,21 @@ export default function RunPage() {
         </section>
 
         {/* 9 · CUSTOMER PROFITABILITY MATRIX ─────────────────────── */}
-        <section className="section-enter">
+        <section id="sec-customers" className="section-enter">
           <SectionHeading label="Customer Profitability Matrix"
             sub={customerProfiles.length > 0 ? `${customerProfiles.length} customers · Enterprise / Mid / SMB segmentation · revenue concentration` : "Run analysis to see customer breakdown"} />
           {loading ? <Skel h="h-64" /> : <CustomerMatrix profiles={customerProfiles} />}
         </section>
 
         {/* 10 · FRAUD MONITOR ─────────────────────────────────────── */}
-        <section className="section-enter">
+        <section id="sec-fraud" className="section-enter">
           <SectionHeading label="Fraud Monitor"
             sub={fraudAlerts.length > 0 ? `${fraudAlerts.length} suspicious patterns detected · 5 behavioral rules · velocity, duplicates, round numbers` : "No suspicious patterns detected"} />
           {loading ? <Skel h="h-48" /> : <FraudAlertPanel alerts={fraudAlerts} />}
         </section>
 
         {/* 11 · ANOMALY DETECTION ──────────────────────────────────── */}
-        <section className="section-enter">
+        <section id="sec-anomalies" className="section-enter">
           <SectionHeading label="Anomaly Detection"
             sub={anomalies.length > 0 ? `${highAnomalies} HIGH severity · IsolationForest ML · feature importance + detection timeline` : "All metrics within expected ranges"} />
           {loading ? <Skel h="h-48" /> : <AnomalyMLPanel anomalies={anomalies} snapshotCount={snapshots.length} />}
@@ -556,7 +573,7 @@ export default function RunPage() {
 
         {/* 12 · FUNDRAISING READINESS ─────────────────────────────── */}
         {!loading && fundraisingScore && (
-          <section className="section-enter">
+          <section id="sec-fundraising" className="section-enter">
             <SectionHeading label="Fundraising Readiness"
               sub="Series A predictor · 5 dimensions · rule-based scoring on your actual KPIs" />
             <div className="card-brutal p-6">
@@ -607,7 +624,7 @@ export default function RunPage() {
 
         {/* 13 · AI INTELLIGENCE CENTER ─────────────────────────────── */}
         {!loading && (
-          <section className="section-enter">
+          <section id="sec-ai" className="section-enter">
             <SectionHeading label="AI Intelligence Center"
               sub="Select a tool · generate your output · Claude Haiku · ~$0.003/call" />
 
