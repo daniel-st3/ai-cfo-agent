@@ -33,6 +33,7 @@ import { FraudAlertPanel }              from "@/components/fraud-alert-panel";
 import { CustomerMatrix }               from "@/components/customer-matrix";
 import { IndustryBenchmarker }          from "@/components/industry-benchmarker";
 import { MorningBriefing }             from "@/components/morning-briefing";
+import { AutonomousAgentSection }       from "@/components/autonomous-agent-section";
 import {
   getKPISeries, getAnomalies, getSignals,
   getBoardPrep, getReport, getVCMemo, getInvestorUpdate,
@@ -686,7 +687,20 @@ export default function RunPage() {
           </section>
         )}
 
-        {/* 14 · AI INTELLIGENCE CENTER ─────────────────────────────── */}
+        {/* 14 · AUTONOMOUS CFO AGENT ──────────────────────────────── */}
+        {!loading && (
+          <section id="sec-agent" className="section-enter">
+            <SectionHeading label="Autonomous CFO Agent"
+              sub="Claude Haiku perceives · reasons · plans · executes · learns · ~$0.003/cycle" />
+            <AutonomousAgentSection
+              runId={runId as string}
+              companyName={companyName || "the company"}
+              sector={sector || "saas"}
+            />
+          </section>
+        )}
+
+        {/* 15 · AI INTELLIGENCE CENTER ─────────────────────────────── */}
         {!loading && (
           <section id="sec-ai" className="section-enter">
             <SectionHeading label="AI Intelligence Center"

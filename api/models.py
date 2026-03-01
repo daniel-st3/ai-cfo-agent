@@ -261,6 +261,62 @@ class CustomerProfile(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class AgentObservation(Base):
+    """Periodic financial state snapshot observed by the autonomous CFO agent."""
+
+    __tablename__ = "agent_observations"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    runway_months: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False, default=0.0)
+    burn_rate: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0.0)
+    mrr: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0.0)
+    burn_change_pct: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False, default=0.0)
+    mrr_change_pct: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False, default=0.0)
+    active_anomalies_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    fraud_alerts_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    raw_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentPlan(Base):
+    """Multi-step action plan created by the agent for a detected financial event."""
+
+    __tablename__ = "agent_plans"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    observation_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("agent_observations.id", ondelete="CASCADE"), nullable=False
+    )
+    goal: Mapped[str] = mapped_column(Text, nullable=False)
+    plan_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    decision_reasoning: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentAction(Base):
+    """Individual action executed (or pending approval) as part of an agent plan."""
+
+    __tablename__ = "agent_actions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    plan_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("agent_plans.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    action_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="executed")
+    requires_approval: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    approval_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    executed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 __all__ = [
     "Base",
     "RawFinancial",
@@ -278,4 +334,7 @@ __all__ = [
     "BoardDeck",
     "FraudAlert",
     "CustomerProfile",
+    "AgentObservation",
+    "AgentPlan",
+    "AgentAction",
 ]

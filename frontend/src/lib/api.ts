@@ -1,4 +1,6 @@
 import type {
+  AgentCycleResult,
+  AgentStatus,
   AnalyzeResponse,
   BenchmarkResult,
   BoardDeckStatus,
@@ -352,4 +354,46 @@ export async function sendBoardChatMessage(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ run_id: runId, messages }),
   });
+}
+
+// ── Autonomous CFO Agent ───────────────────────────────────────────────────
+
+/** Trigger one autonomous agent monitoring cycle */
+export async function triggerAgentCycle(
+  runId: string,
+  companyName: string,
+  sector: string,
+): Promise<AgentCycleResult> {
+  return apiFetch(`/agent/${runId}/cycle`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ company_name: companyName, sector }),
+  });
+}
+
+/** Get latest agent status: observation + pending approvals + recent actions */
+export async function getAgentStatus(runId: string): Promise<AgentStatus> {
+  return apiFetch(`/agent/${runId}/status`);
+}
+
+/** Get full action history for a run */
+export async function getAgentActions(
+  runId: string,
+  limit = 50,
+): Promise<{ run_id: string; actions: AgentStatus["recent_actions"] }> {
+  return apiFetch(`/agent/${runId}/actions?limit=${limit}`);
+}
+
+/** Approve a pending agent action — triggers immediate execution */
+export async function approveAgentAction(
+  actionId: string,
+): Promise<{ action_id: string; status: string; result: Record<string, unknown> }> {
+  return apiFetch(`/agent/actions/${actionId}/approve`, { method: "POST" });
+}
+
+/** Reject a pending agent action */
+export async function rejectAgentAction(
+  actionId: string,
+): Promise<{ action_id: string; status: string }> {
+  return apiFetch(`/agent/actions/${actionId}/reject`, { method: "POST" });
 }

@@ -283,3 +283,50 @@ export interface MorningBriefingData {
   actions: string[];
   week_start: string;
 }
+
+// ── Autonomous CFO Agent ────────────────────────────────────────────────────
+
+export interface AgentObservation {
+  id: string;
+  observed_at: string;
+  runway_months: number;
+  burn_rate: number;
+  mrr: number;
+  burn_change_pct: number;
+  mrr_change_pct: number;
+  active_anomalies_count: number;
+  fraud_alerts_count: number;
+}
+
+export interface AgentActionItem {
+  id: string;
+  plan_id: string;
+  action_type: string;
+  status: "pending_approval" | "approved" | "rejected" | "executed" | "failed" | "skipped";
+  requires_approval: boolean;
+  approval_message: string | null;
+  result: Record<string, unknown> | null;
+  created_at: string;
+  executed_at: string | null;
+}
+
+export interface AgentStatus {
+  run_id: string;
+  agent_running: boolean;
+  latest_observation: AgentObservation | null;
+  pending_approvals: AgentActionItem[];
+  recent_actions: AgentActionItem[];
+}
+
+export interface AgentCycleResult {
+  run_id: string;
+  decision_tool: string;
+  decision_reasoning: string;
+  plan_type: string;
+  plan_goal: string;
+  actions_executed: number;
+  actions_pending_approval: number;
+  actions_failed: number;
+  error: string;
+  completed_at: string;
+}

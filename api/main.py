@@ -1147,6 +1147,234 @@ def create_app(
             "percentiles":  percentiles,
         }
 
+    # ── Autonomous CFO Agent ──────────────────────────────────────────────
+    @app.post("/agent/{run_id}/cycle")
+    async def agent_cycle(run_id: uuid.UUID, request: dict[str, Any] = {}) -> dict[str, Any]:
+        """
+        Trigger one autonomous agent monitoring cycle for the given run.
+        perceive → reason (Claude Haiku) → plan → execute → remember.
+        Returns a summary of what the agent observed and did.
+        """
+        from agents.autonomous_cfo import AutonomousCFOAgent
+        from api.schemas import AgentCycleResponse
+
+        company_name = str(request.get("company_name", "the company"))
+        sector = str(request.get("sector", "saas"))
+
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            agent = AutonomousCFOAgent()
+            result = await agent.run_cycle(session, run_id, company_name, sector)
+
+        return {
+            "run_id": str(run_id),
+            "decision_tool": result.decision_tool,
+            "decision_reasoning": result.decision_reasoning,
+            "plan_type": result.plan_type,
+            "plan_goal": result.plan_goal,
+            "actions_executed": result.actions_executed,
+            "actions_pending_approval": result.actions_pending_approval,
+            "actions_failed": result.actions_failed,
+            "error": result.error,
+            "completed_at": result.completed_at.isoformat(),
+        }
+
+    @app.get("/agent/{run_id}/status")
+    async def agent_status(run_id: uuid.UUID) -> dict[str, Any]:
+        """
+        Return the latest agent observation, pending approvals, and recent actions
+        for the given run. Polled every 30s by the frontend dashboard.
+        """
+        from agents.agent_memory import AgentMemory
+        from api.models import AgentObservation
+
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            memory = AgentMemory()
+
+            # Latest observation
+            obs_result = await session.execute(
+                select(AgentObservation)
+                .where(AgentObservation.run_id == run_id)
+                .order_by(AgentObservation.observed_at.desc())
+                .limit(1)
+            )
+            obs = obs_result.scalar_one_or_none()
+
+            pending = await memory.get_pending_approvals(session, run_id)
+            recent = await memory.get_recent_history(session, run_id, n=10)
+
+        def _action_dict(a: Any) -> dict[str, Any]:
+            return {
+                "id": str(a.id),
+                "plan_id": str(a.plan_id),
+                "action_type": a.action_type,
+                "status": a.status,
+                "requires_approval": a.requires_approval,
+                "approval_message": a.approval_message,
+                "result": a.result,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "executed_at": a.executed_at.isoformat() if a.executed_at else None,
+            }
+
+        return {
+            "run_id": str(run_id),
+            "agent_running": False,
+            "latest_observation": {
+                "id": str(obs.id),
+                "observed_at": obs.observed_at.isoformat(),
+                "runway_months": float(obs.runway_months),
+                "burn_rate": float(obs.burn_rate),
+                "mrr": float(obs.mrr),
+                "burn_change_pct": float(obs.burn_change_pct),
+                "mrr_change_pct": float(obs.mrr_change_pct),
+                "active_anomalies_count": obs.active_anomalies_count,
+                "fraud_alerts_count": obs.fraud_alerts_count,
+            } if obs else None,
+            "pending_approvals": [_action_dict(a) for a in pending],
+            "recent_actions": [_action_dict(a) for a in recent],
+        }
+
+    @app.get("/agent/{run_id}/actions")
+    async def agent_actions(
+        run_id: uuid.UUID, limit: int = 50, offset: int = 0
+    ) -> dict[str, Any]:
+        """Return paginated action history for the given run."""
+        from api.models import AgentAction
+
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            result = await session.execute(
+                select(AgentAction)
+                .where(AgentAction.run_id == run_id)
+                .order_by(AgentAction.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+            )
+            actions = list(result.scalars().all())
+
+        return {
+            "run_id": str(run_id),
+            "actions": [
+                {
+                    "id": str(a.id),
+                    "plan_id": str(a.plan_id),
+                    "action_type": a.action_type,
+                    "status": a.status,
+                    "requires_approval": a.requires_approval,
+                    "approval_message": a.approval_message,
+                    "result": a.result,
+                    "created_at": a.created_at.isoformat() if a.created_at else None,
+                    "executed_at": a.executed_at.isoformat() if a.executed_at else None,
+                }
+                for a in actions
+            ],
+        }
+
+    @app.post("/agent/actions/{action_id}/approve")
+    async def approve_agent_action(action_id: uuid.UUID) -> dict[str, Any]:
+        """
+        Approve a pending agent action. Immediately executes the action
+        and updates the status to 'executed' or 'failed'.
+        """
+        from agents.agent_memory import AgentMemory
+        from agents.executor import ActionExecutor
+        from agents.planning import Action, ActionType
+        from api.models import AgentAction
+        from datetime import timezone
+
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            memory = AgentMemory()
+            action_row = await memory.get_action_by_id(session, action_id)
+            if not action_row:
+                raise HTTPException(status_code=404, detail="Action not found")
+            if action_row.status != "pending_approval":
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Action is already {action_row.status}",
+                )
+
+            # Reconstruct Action object and execute
+            action = Action(
+                type=ActionType(action_row.action_type),
+                params=action_row.params or {},
+                requires_approval=False,
+                approval_message="",
+            )
+            executor = ActionExecutor()
+            action_result = await executor.execute(
+                action=action,
+                session=session,
+                run_id=action_row.run_id,
+            )
+
+            # Update DB row
+            action_row.status = "executed" if action_result.success else "failed"
+            action_row.result = action_result.to_dict()
+            action_row.executed_at = datetime.now(timezone.utc)
+            await session.commit()
+
+        return {
+            "action_id": str(action_id),
+            "status": action_row.status,
+            "result": action_result.to_dict(),
+        }
+
+    @app.post("/agent/actions/{action_id}/reject")
+    async def reject_agent_action(action_id: uuid.UUID) -> dict[str, Any]:
+        """Reject a pending agent action — marks it as rejected without executing."""
+        from agents.agent_memory import AgentMemory
+
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            memory = AgentMemory()
+            action_row = await memory.get_action_by_id(session, action_id)
+            if not action_row:
+                raise HTTPException(status_code=404, detail="Action not found")
+            if action_row.status != "pending_approval":
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Action is already {action_row.status}",
+                )
+            action_row.status = "rejected"
+            await session.commit()
+
+        return {"action_id": str(action_id), "status": "rejected"}
+
+    @app.get("/agent/{run_id}/observations")
+    async def agent_observations(run_id: uuid.UUID, limit: int = 20) -> dict[str, Any]:
+        """Return observation history for the given run (last N cycles)."""
+        from api.models import AgentObservation
+
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            result = await session.execute(
+                select(AgentObservation)
+                .where(AgentObservation.run_id == run_id)
+                .order_by(AgentObservation.observed_at.desc())
+                .limit(limit)
+            )
+            observations = list(result.scalars().all())
+
+        return {
+            "run_id": str(run_id),
+            "observations": [
+                {
+                    "id": str(o.id),
+                    "observed_at": o.observed_at.isoformat(),
+                    "runway_months": float(o.runway_months),
+                    "burn_rate": float(o.burn_rate),
+                    "mrr": float(o.mrr),
+                    "burn_change_pct": float(o.burn_change_pct),
+                    "mrr_change_pct": float(o.mrr_change_pct),
+                    "active_anomalies_count": o.active_anomalies_count,
+                    "fraud_alerts_count": o.fraud_alerts_count,
+                }
+                for o in observations
+            ],
+        }
+
     # ── Morning CFO Briefing ─────────────────────────────────────────────
     @app.post("/briefing/preview")
     async def briefing_preview(request: dict[str, Any]) -> dict[str, Any]:

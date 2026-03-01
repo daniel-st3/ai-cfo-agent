@@ -359,3 +359,51 @@ class CustomerProfileRecord(BaseModel):
     churn_flag: bool = False
     segment: str = Field(min_length=1, max_length=20)
     revenue_pct: Decimal
+
+
+# ---------------------------------------------------------------------------
+# Autonomous Agent schemas
+# ---------------------------------------------------------------------------
+
+class AgentObservationResponse(BaseModel):
+    id: uuid.UUID
+    observed_at: datetime
+    runway_months: float
+    burn_rate: float
+    mrr: float
+    burn_change_pct: float
+    mrr_change_pct: float
+    active_anomalies_count: int
+    fraud_alerts_count: int
+
+
+class AgentActionResponse(BaseModel):
+    id: uuid.UUID
+    plan_id: uuid.UUID
+    action_type: str
+    status: str
+    requires_approval: bool
+    approval_message: str | None
+    result: dict[str, Any] | None
+    created_at: datetime
+    executed_at: datetime | None
+
+
+class AgentStatusResponse(BaseModel):
+    run_id: uuid.UUID
+    latest_observation: AgentObservationResponse | None = None
+    pending_approvals: list[AgentActionResponse] = []
+    recent_actions: list[AgentActionResponse] = []
+    agent_running: bool = False
+
+
+class AgentCycleResponse(BaseModel):
+    run_id: uuid.UUID
+    decision_tool: str
+    decision_reasoning: str
+    plan_type: str
+    plan_goal: str
+    actions_executed: int
+    actions_pending_approval: int
+    actions_failed: int
+    error: str = ""
