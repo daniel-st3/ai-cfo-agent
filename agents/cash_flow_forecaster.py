@@ -45,7 +45,11 @@ class CashFlowForecaster:
             )
             burns = [float(k.burn_rate or 0) for k in trailing_kpis if (k.burn_rate or 0) > 0]
             avg_burn = float(np.mean(burns)) if burns else avg_mrr * 0.4
-            std_burn = float(np.std(burns)) if len(burns) > 1 else avg_burn * 0.15
+            # Floor std at 20% of avg_burn so bands are always visibly wide
+            std_burn = max(
+                float(np.std(burns)) if len(burns) > 1 else avg_burn * 0.20,
+                avg_burn * 0.20,
+            )
         else:
             avg_mrr = 0.0
             avg_burn = 0.0
@@ -72,7 +76,7 @@ class CashFlowForecaster:
 
             # Stochastic weekly net change
             inflows = avg_mrr  # deterministic MRR
-            variable_outflow = rng.normal(variable_burn, std_burn * 0.3, size=self.N_SIMULATIONS)
+            variable_outflow = rng.normal(variable_burn, std_burn * 1.0, size=self.N_SIMULATIONS)
             variable_outflow = np.maximum(variable_outflow, 0)
 
             outflows = committed_this_week + variable_outflow
@@ -145,11 +149,13 @@ class CashFlowForecaster:
         if cb:
             return float(cb.balance)
 
-        # Estimate: 6 months of trailing burn
+        # Estimate: ~6 months of net burn (gross burn minus MRR)
         kpis = await self._get_trailing_kpis(session, run_id, weeks=4)
         if kpis:
             avg_burn = float(np.mean([float(k.burn_rate or 0) for k in kpis]))
-            return max(avg_burn * 26, 50_000.0)  # 6 months runway or $50K minimum
+            avg_mrr_val = float(np.mean([float(k.mrr or 0) for k in kpis]))
+            avg_net_burn = max(avg_burn - avg_mrr_val, 0.0)
+            return max(avg_net_burn * 26, 50_000.0)  # 6 months net-burn runway or $50K floor
         return 200_000.0  # safe default
 
     async def _get_committed_expenses(

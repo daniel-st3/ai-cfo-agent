@@ -161,9 +161,13 @@ export function CashFlowSection({ runId }: Props) {
           <div className="text-[10px] text-gray-400 mb-0.5 flex items-center gap-1">
             <TrendingDown className="h-3 w-3 text-red-400" /> Committed weekly
           </div>
-          <div className="text-lg font-bold text-red-500 tabular-nums">
-            {data ? fmtK(data.total_committed_weekly) : "..."}
-          </div>
+          {data && data.total_committed_weekly > 0 ? (
+            <div className="text-lg font-bold text-red-500 tabular-nums">
+              {fmtK(data.total_committed_weekly)}
+            </div>
+          ) : (
+            <div className="text-sm font-medium text-gray-400 italic">None added yet</div>
+          )}
           <div className="text-[9px] text-gray-400">recurring outflows</div>
         </div>
 
