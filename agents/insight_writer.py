@@ -585,10 +585,199 @@ def _investor_update_fallback(
     }
 
 
+async def generate_pre_mortem(
+    *,
+    kpi_snapshots: list[dict[str, Any]],
+    months_runway: float,
+    company_name: str,
+    sector: str,
+) -> list[dict[str, Any]]:
+    """Generate 3 pre-mortem failure scenarios — what kills this company in 6 months.
+
+    Returns list of {scenario_type, title, probability_pct, primary_cause,
+    warning_signs: list[str], prevention_actions: list[str], months_to_crisis: int}
+    Cost: ~$0.004 via Haiku.
+    """
+    if not kpi_snapshots:
+        return _pre_mortem_fallback(months_runway)
+
+    latest = kpi_snapshots[-1]
+    mrr    = latest.get("mrr", 0) or 0
+    burn   = latest.get("burn_rate", 0) or 0
+    churn  = latest.get("churn_rate", 0) or 0
+    gm     = latest.get("gross_margin", 0) or 0
+    ltv_cac = (latest.get("ltv", 0) or 0) / max(latest.get("cac", 1) or 1, 1)
+
+    system_prompt = (
+        "You are a brutal startup post-mortem analyst. Your job is to identify the 3 most likely "
+        "ways a company will fail based on its financial data. Be specific, not generic. "
+        "Ground every scenario in the actual numbers. Return JSON only."
+    )
+    user_prompt = (
+        f"Company: {company_name or 'Unknown'} | Sector: {sector}\n"
+        f"Current MRR: ${mrr:,.0f}/wk | Burn: ${burn:,.0f}/wk | Runway: {months_runway:.1f} months\n"
+        f"Churn rate: {churn * 100:.2f}%/wk | Gross margin: {gm * 100:.0f}% | LTV:CAC: {ltv_cac:.1f}x\n\n"
+        "Return exactly 3 failure scenarios covering: financial (cash/burn), market (competition/churn), "
+        "and operational (team/product). Each scenario:\n"
+        "{\n"
+        '  "scenario_type": "financial"|"market"|"operational",\n'
+        '  "title": "short dramatic title ≤8 words",\n'
+        '  "probability_pct": integer 5-60,\n'
+        '  "primary_cause": "one sentence root cause grounded in the numbers",\n'
+        '  "warning_signs": ["3 early warning signs to watch"],\n'
+        '  "prevention_actions": ["3 concrete actions CFO can take NOW"],\n'
+        '  "months_to_crisis": integer 1-6\n'
+        "}\n"
+        "Return as JSON array of 3 objects."
+    )
+
+    try:
+        raw = await litellm_completion_with_retry(
+            model=GPT_MINI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user",   "content": user_prompt},
+            ],
+            temperature=0.3,
+            max_tokens=1200,
+        )
+        scenarios = _safe_json_array_extract(raw)
+        if not isinstance(scenarios, list):
+            return _pre_mortem_fallback(months_runway)
+
+        validated = []
+        for s in scenarios[:3]:
+            if not isinstance(s, dict):
+                continue
+            validated.append({
+                "scenario_type":      str(s.get("scenario_type", "financial")),
+                "title":              str(s.get("title", "Unknown Risk"))[:60],
+                "probability_pct":    max(5, min(60, int(s.get("probability_pct", 20)))),
+                "primary_cause":      str(s.get("primary_cause", ""))[:300],
+                "warning_signs":      [str(w)[:150] for w in (s.get("warning_signs") or [])[:3]],
+                "prevention_actions": [str(a)[:150] for a in (s.get("prevention_actions") or [])[:3]],
+                "months_to_crisis":   max(1, min(6, int(s.get("months_to_crisis", 3)))),
+            })
+        return validated if validated else _pre_mortem_fallback(months_runway)
+    except Exception:
+        return _pre_mortem_fallback(months_runway)
+
+
+def _pre_mortem_fallback(months_runway: float) -> list[dict[str, Any]]:
+    return [
+        {
+            "scenario_type": "financial",
+            "title": "Runway Runs Out Before Next Milestone",
+            "probability_pct": 30,
+            "primary_cause": f"At current burn, {months_runway:.1f} months runway may not reach Series A metrics.",
+            "warning_signs": ["MRR growth slows below 5% MoM", "Burn rate creep above forecast", "CAC rises without matching LTV improvement"],
+            "prevention_actions": ["Cut discretionary spend 20% immediately", "Accelerate enterprise deals to boost MRR", "Start Series A conversations now, not in 3 months"],
+            "months_to_crisis": max(1, int(months_runway) - 2),
+        },
+        {
+            "scenario_type": "market",
+            "title": "Churn Quietly Hollows Out Revenue Base",
+            "probability_pct": 25,
+            "primary_cause": "Weekly churn compounds faster than new sales can replace lost revenue.",
+            "warning_signs": ["Net Revenue Retention drops below 90%", "SMB segment churn accelerates", "Competitor pricing pressure increases"],
+            "prevention_actions": ["Implement customer success check-ins at 30/60/90 days", "Build product stickiness features", "Identify top 10 churn-risk accounts and assign CSM"],
+            "months_to_crisis": 4,
+        },
+        {
+            "scenario_type": "operational",
+            "title": "Key-Person Departure Stalls Product",
+            "probability_pct": 15,
+            "primary_cause": "Engineering velocity depends on a small team with no succession plan.",
+            "warning_signs": ["GitHub commit velocity drops", "Feature release cadence slows", "Customer support tickets rise on product bugs"],
+            "prevention_actions": ["Document all critical systems and processes", "Begin backfill hiring before it is urgent", "Create retention packages for key engineers"],
+            "months_to_crisis": 3,
+        },
+    ]
+
+
+async def generate_board_chat(
+    *,
+    run_id: uuid.UUID,
+    messages: list[dict[str, str]],
+    session: Any,
+) -> str:
+    """Continue a multi-turn CFO board preparation conversation.
+
+    Builds a financial context system prompt and appends the conversation history.
+    Cost: ~$0.003-0.008 per turn via Haiku.
+    """
+    from sqlalchemy import select as _select
+    from api.models import KPISnapshot as _KPISnapshot, Anomaly as _Anomaly
+
+    # Fetch last 4 weeks of KPI data for context
+    kpi_rows = (
+        await session.execute(
+            _select(_KPISnapshot)
+            .where(_KPISnapshot.run_id == run_id)
+            .order_by(_KPISnapshot.week_start.desc())
+            .limit(4)
+        )
+    ).scalars().all()
+
+    anomaly_rows = (
+        await session.execute(
+            _select(_Anomaly)
+            .where(_Anomaly.run_id == run_id, _Anomaly.severity == "HIGH")
+            .limit(5)
+        )
+    ).scalars().all()
+
+    kpi_ctx = ""
+    if kpi_rows:
+        latest = kpi_rows[0]
+        kpi_ctx = (
+            f"Latest financials (week of {latest.week_start}):\n"
+            f"- MRR: ${float(latest.mrr or 0):,.0f}/wk | ARR: ${float(latest.arr or 0):,.0f}\n"
+            f"- Burn: ${float(latest.burn_rate or 0):,.0f}/wk | Gross Margin: {float(latest.gross_margin or 0) * 100:.0f}%\n"
+            f"- Churn: {float(latest.churn_rate or 0) * 100:.2f}%/wk | CAC: ${float(latest.cac or 0):,.0f} | LTV: ${float(latest.ltv or 0):,.0f}"
+        )
+
+    anomaly_ctx = ""
+    if anomaly_rows:
+        anomaly_ctx = "\nHigh-severity anomalies:\n" + "\n".join(
+            f"- {a.metric}: {a.description or 'no description'}" for a in anomaly_rows
+        )
+
+    system_prompt = (
+        "You are an expert CFO coach helping a startup founder prepare for board meetings and investor calls. "
+        "You have full visibility into the company's actual financial data. Answer concisely and specifically — "
+        "always ground responses in the numbers below. If asked about a metric, give the actual value. "
+        "Be direct, honest, and help the founder anticipate hard questions.\n\n"
+        f"{kpi_ctx}{anomaly_ctx}\n\n"
+        "Keep answers under 200 words unless the user asks for detail. "
+        "Format key numbers in bold."
+    )
+
+    llm_messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+    # Append conversation history (last 20 turns max to stay within context)
+    for msg in messages[-20:]:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role in ("user", "assistant") and content:
+            llm_messages.append({"role": role, "content": str(content)[:1000]})
+
+    try:
+        return await litellm_completion_with_retry(
+            model=GPT_MINI_MODEL,
+            messages=llm_messages,
+            temperature=0.2,
+            max_tokens=400,
+        )
+    except Exception as e:
+        return f"Sorry, I couldn't generate a response right now. Error: {e}"
+
+
 __all__ = [
     "InsightWriterAgent",
     "generate_vc_memo",
     "generate_investor_update",
+    "generate_pre_mortem",
+    "generate_board_chat",
     "llm_json_completion",
     "litellm_completion_with_retry",
     "CLAUDE_MODEL",

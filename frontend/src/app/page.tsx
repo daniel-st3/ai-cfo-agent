@@ -69,6 +69,110 @@ const FEATURES = [
   { icon: Brain,      label: "Board Q&A + CFO Report" },
 ];
 
+const VALID_CATEGORIES = [
+  "subscription_revenue", "churn_refund", "salary_expense",
+  "software_expense", "marketing_expense", "cogs",
+  "tax_payment", "contractor_expense", "office_rent", "professional_services",
+];
+
+const REQUIRED_COLS = [
+  { col: "date",        example: "2024-01-07",           note: "ISO 8601 or MM/DD/YYYY" },
+  { col: "category",   example: "subscription_revenue",  note: "See valid categories below" },
+  { col: "amount",     example: "12500.00",              note: "Positive = revenue, negative = expense" },
+  { col: "customer_id",example: "acme_corp",             note: "Optional — enables customer analytics" },
+];
+
+function downloadTemplate() {
+  const header = "date,category,amount,customer_id";
+  const rows = [
+    "2024-01-07,subscription_revenue,12500.00,acme_corp",
+    "2024-01-07,subscription_revenue,4200.00,startup_b",
+    "2024-01-07,salary_expense,-18000.00,",
+    "2024-01-07,marketing_expense,-4500.00,",
+    "2024-01-07,cogs,-3200.00,",
+    "2024-01-14,subscription_revenue,12900.00,acme_corp",
+    "2024-01-14,subscription_revenue,4200.00,startup_b",
+    "2024-01-14,salary_expense,-18000.00,",
+    "2024-01-14,marketing_expense,-4200.00,",
+    "2024-01-14,cogs,-3300.00,",
+  ];
+  const csv  = [header, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement("a"), { href: url, download: "ai_cfo_template.csv" });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function CSVErrorPanel({ error, onReset }: { error: string; onReset: () => void }) {
+  // Determine if this looks like a validation/format error vs a connection error
+  const isFormatError = /validation|column|category|parse|row|field|invalid|empty|400/i.test(error);
+  const isNetworkError = /fetch|network|running|connect|ECONNREFUSED/i.test(error);
+
+  if (isNetworkError) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <AlertCircle className="h-4 w-4 flex-shrink-0" />
+        {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-red-200 bg-red-50 overflow-hidden">
+      {/* header */}
+      <div className="flex items-start gap-3 px-4 py-4 border-b border-red-100">
+        <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-red-700">We could not analyze this file</p>
+          <p className="text-xs text-red-500 mt-0.5 break-words">{error}</p>
+        </div>
+        <button onClick={onReset} className="text-xs text-red-400 hover:text-red-600 font-semibold transition-colors flex-shrink-0">
+          Try again
+        </button>
+      </div>
+
+      <div className="px-4 py-4 space-y-4">
+        {/* required columns */}
+        <div>
+          <p className="text-[11px] font-black text-red-700 uppercase tracking-wider mb-2">Required Columns</p>
+          <div className="space-y-1.5">
+            {REQUIRED_COLS.map(({ col, example, note }) => (
+              <div key={col} className="flex items-center gap-2 rounded-lg bg-white border border-red-100 px-3 py-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-red-300 flex-shrink-0" />
+                <code className="text-xs font-mono font-bold text-gray-700 w-28 flex-shrink-0">{col}</code>
+                <code className="text-[11px] font-mono text-gray-500 hidden sm:block">{example}</code>
+                <span className="text-[10px] text-gray-400 ml-auto hidden md:block">{note}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* valid categories */}
+        <div>
+          <p className="text-[11px] font-black text-red-700 uppercase tracking-wider mb-2">Valid Category Values</p>
+          <div className="flex flex-wrap gap-1.5">
+            {VALID_CATEGORIES.map(cat => (
+              <span key={cat} className="inline-flex items-center rounded-full bg-white border border-red-100 px-2.5 py-0.5 text-[10px] font-mono font-semibold text-gray-600">
+                {cat}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* download template */}
+        <button
+          onClick={downloadTemplate}
+          className="flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors w-full justify-center"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Download a valid CSV template (10 sample rows)
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const mouse  = useMouse();
@@ -391,12 +495,7 @@ export default function HomePage() {
 
               <UploadZone onFiles={setFiles} disabled={isRunning} />
 
-              {error && (
-                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  {error}
-                </div>
-              )}
+              {error && <CSVErrorPanel error={error} onReset={() => { setError(null); setFiles([]); }} />}
 
               <div className="flex flex-col sm:flex-row gap-3 pt-1">
                 <button

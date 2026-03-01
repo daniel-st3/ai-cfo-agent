@@ -11,6 +11,8 @@ import type {
   ReportData,
   CompetitorProfile,
   VCMemoData,
+  PreMortemScenario,
+  ChatMessage,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -294,4 +296,34 @@ export async function getFraudAlerts(runId: string): Promise<FraudAlert[]> {
 /** Get customer profitability profiles for a run */
 export async function getCustomerProfiles(runId: string): Promise<CustomerProfile[]> {
   return apiFetch(`/runs/${runId}/customers`);
+}
+
+// ── Pre-mortem Generator ───────────────────────────────────────────────────
+
+/** Generate 3 failure scenarios via Claude Haiku (~$0.004/call) */
+export async function getPreMortem(
+  runId: string,
+  monthsRunway: number,
+  companyName: string,
+  sector: string,
+): Promise<PreMortemScenario[]> {
+  return apiFetch("/pre-mortem", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ run_id: runId, months_runway: monthsRunway, company_name: companyName, sector }),
+  });
+}
+
+// ── Multi-turn Board Q&A Chat ──────────────────────────────────────────────
+
+/** Send a message to the CFO board prep chat and get a response */
+export async function sendBoardChatMessage(
+  runId: string,
+  messages: ChatMessage[],
+): Promise<ChatMessage> {
+  return apiFetch("/board-prep/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ run_id: runId, messages }),
+  });
 }

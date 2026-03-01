@@ -60,7 +60,7 @@ from api.schemas import (
 from agents.board_deck_generator import BoardDeckGenerator
 from agents.cash_flow_forecaster import CashFlowForecaster
 from agents.deferred_revenue import DeferredRevenueCalculator
-from agents.insight_writer import generate_investor_update, generate_vc_memo
+from agents.insight_writer import generate_investor_update, generate_vc_memo, generate_pre_mortem, generate_board_chat
 from agents.quickbooks_sync import QuickBooksIngestionAgent
 from agents.stripe_sync import StripeIngestionAgent
 from graph.cfo_graph import CFOGraphRunner, build_graph_runner
@@ -950,6 +950,103 @@ def create_app(
     @app.on_event("startup")
     async def _attach_db():
         app.state.db_manager = get_db_manager()
+
+    # ── CSV Template ────────────────────────────────────────────────────────
+
+    @app.get("/analyze/template")
+    async def csv_template():
+        """Return a minimal valid CSV template the user can fill in."""
+        from fastapi.responses import Response as _Response
+        rows = [
+            "date,category,amount,customer_id",
+            "2024-01-07,subscription_revenue,12500.00,acme_corp",
+            "2024-01-07,subscription_revenue,4200.00,startup_b",
+            "2024-01-07,salary_expense,-18000.00,",
+            "2024-01-07,marketing_expense,-4500.00,",
+            "2024-01-07,cogs,-3200.00,",
+            "2024-01-14,subscription_revenue,12900.00,acme_corp",
+            "2024-01-14,subscription_revenue,4200.00,startup_b",
+            "2024-01-14,salary_expense,-18000.00,",
+            "2024-01-14,marketing_expense,-4200.00,",
+            "2024-01-14,cogs,-3300.00,",
+        ]
+        content = "\n".join(rows)
+        return _Response(
+            content=content,
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=ai_cfo_template.csv"},
+        )
+
+    # ── Pre-mortem Generator ─────────────────────────────────────────────────
+
+    @app.post("/pre-mortem")
+    async def pre_mortem_endpoint(request: dict) -> list[dict]:
+        """Generate 3 failure scenarios for a run using Claude Haiku (~$0.004/call)."""
+        run_id_str = request.get("run_id", "")
+        company_name = str(request.get("company_name", ""))
+        sector = str(request.get("sector", "saas_productivity"))
+        months_runway = float(request.get("months_runway", 12))
+
+        try:
+            run_id = uuid.UUID(str(run_id_str))
+        except (ValueError, AttributeError):
+            raise HTTPException(status_code=422, detail="Invalid run_id")
+
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            kpi_rows = (
+                await session.execute(
+                    select(KPISnapshot)
+                    .where(KPISnapshot.run_id == run_id)
+                    .order_by(KPISnapshot.week_start.desc())
+                    .limit(8)
+                )
+            ).scalars().all()
+            snapshots = [
+                {
+                    "mrr":          float(r.mrr or 0),
+                    "arr":          float(r.arr or 0),
+                    "burn_rate":    float(r.burn_rate or 0),
+                    "gross_margin": float(r.gross_margin or 0),
+                    "churn_rate":   float(r.churn_rate or 0),
+                    "cac":          float(r.cac or 0),
+                    "ltv":          float(r.ltv or 0),
+                }
+                for r in reversed(kpi_rows)
+            ]
+
+        return await generate_pre_mortem(
+            kpi_snapshots=snapshots,
+            months_runway=months_runway,
+            company_name=company_name,
+            sector=sector,
+        )
+
+    # ── Multi-turn Board Q&A Chat ─────────────────────────────────────────────
+
+    @app.post("/board-prep/chat")
+    async def board_prep_chat(request: dict) -> dict:
+        """Continue a multi-turn CFO board prep conversation with Claude Haiku (~$0.003-0.008/turn)."""
+        run_id_str = request.get("run_id", "")
+        messages = request.get("messages", [])
+
+        if not isinstance(messages, list):
+            raise HTTPException(status_code=422, detail="messages must be a list")
+
+        try:
+            run_id = uuid.UUID(str(run_id_str))
+        except (ValueError, AttributeError):
+            raise HTTPException(status_code=422, detail="Invalid run_id")
+
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            reply = await generate_board_chat(
+                run_id=run_id,
+                messages=messages,
+                session=session,
+            )
+
+        return {"role": "assistant", "content": reply}
 
     return app
 

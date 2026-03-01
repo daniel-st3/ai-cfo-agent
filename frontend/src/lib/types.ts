@@ -213,6 +213,25 @@ export interface FraudAlert {
   description: string;
 }
 
+// ── Pre-mortem ─────────────────────────────────────────────────────────────
+
+export interface PreMortemScenario {
+  scenario_type: "financial" | "market" | "operational";
+  title: string;
+  probability_pct: number;
+  primary_cause: string;
+  warning_signs: string[];
+  prevention_actions: string[];
+  months_to_crisis: number;
+}
+
+// ── Board Chat ─────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 // ── Customer Profitability ──────────────────────────────────────────────────
 
 export interface CustomerProfile {
