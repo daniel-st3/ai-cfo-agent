@@ -6,7 +6,7 @@ import {
   ArrowLeft, Sparkles, Zap, FileText, Loader2,
   TrendingUp, TrendingDown, Minus, Scale, Mail, Plug,
   Skull, Target, Send, MessageCircle, Calculator,
-  ShieldCheck, CheckCircle2, XCircle, AlertTriangle, BarChart3,
+  ShieldCheck, CheckCircle2, XCircle, AlertTriangle, BarChart3, Bot,
 } from "lucide-react";
 import { RevenueAreaChart }              from "@/components/charts/revenue-area";
 import { SurvivalRadialChart }           from "@/components/charts/survival-radial";
@@ -49,9 +49,9 @@ import type {
 
 function SectionHeading({ label, sub }: { label: string; sub?: string }) {
   return (
-    <div className="flex items-end gap-3 mb-6">
+    <div className="flex items-end gap-3 mb-4">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">{label}</h2>
+        <h2 className="text-base font-semibold text-gray-900">{label}</h2>
         {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
       </div>
       <div className="flex-1 border-t border-gray-100 mb-1" />
@@ -389,30 +389,22 @@ export default function RunPage() {
           {latest && <span className="hidden md:block text-[10px] text-gray-400 flex-shrink-0">Latest: {latest.week_start}</span>}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => { const el = document.getElementById("sec-agent"); el?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+            className="flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:border-purple-300 hover:bg-purple-100 transition-colors shadow-sm">
+            <Bot className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Auto CFO</span>
+          </button>
+          <button
+            onClick={() => { const el = document.getElementById("sec-ai"); el?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+            className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors shadow-sm">
+            <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+            <span className="hidden sm:inline">AI Reports</span>
+          </button>
           <button onClick={() => setShowIntegrationsModal(true)}
             className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors shadow-sm">
             <Plug className="h-3.5 w-3.5 text-gray-500" />
             <span className="hidden sm:inline">Integrations</span>
-          </button>
-          <button onClick={handleBoardPrep} disabled={loading || boardLoading}
-            className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-40 transition-colors shadow-sm">
-            {boardLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-blue-500" />}
-            <span className="hidden sm:inline">Board Q&A</span>
-          </button>
-          <button onClick={handleReport} disabled={loading || reportLoading}
-            className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-40 transition-colors shadow-sm">
-            {reportLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5 text-gray-500" />}
-            <span className="hidden sm:inline">CFO Report</span>
-          </button>
-          <button onClick={handleVCMemo} disabled={loading || vcMemoLoading || !survival}
-            className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:border-amber-300 hover:bg-amber-100 disabled:opacity-40 transition-colors shadow-sm">
-            {vcMemoLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Scale className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">VC Verdict</span>
-          </button>
-          <button onClick={handleInvestorUpdate} disabled={loading || investorUpdateLoading || !survival}
-            className="flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:border-blue-300 hover:bg-blue-100 disabled:opacity-40 transition-colors shadow-sm">
-            {investorUpdateLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">Investor Update</span>
           </button>
         </div>
       </header>
@@ -445,7 +437,7 @@ export default function RunPage() {
       />
 
       {/* ── Content ────────────────────────────────────────────────── */}
-      <main ref={mainRef} className="mx-auto max-w-screen-xl px-4 sm:px-6 py-10 space-y-14">
+      <main ref={mainRef} className="mx-auto max-w-screen-xl px-4 sm:px-6 py-6 space-y-10">
 
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-600">{error}</div>
@@ -508,7 +500,34 @@ export default function RunPage() {
           )}
         </section>
 
-        {/* 2 · RUNWAY EXPLORER ────────────────────────────────────── */}
+        {/* 2 · AUTONOMOUS CFO AGENT ──────────────────────────────── */}
+        {!loading && (
+          <section id="sec-agent" className="section-enter">
+            <div className="flex items-end gap-3 mb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-md bg-purple-600">
+                    <Bot className="h-3 w-3 text-white" />
+                  </div>
+                  <h2 className="text-base font-semibold text-gray-900">Autonomous CFO Agent</h2>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[10px] font-bold text-purple-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse inline-block" />
+                    24/7 Monitoring
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400">Claude perceives your finances → reasons with tool_use → plans → executes → learns · ~$0.003/cycle</p>
+              </div>
+              <div className="flex-1 border-t border-gray-100 mb-1" />
+            </div>
+            <AutonomousAgentSection
+              runId={runId as string}
+              companyName={companyName || "the company"}
+              sector={sector || "saas"}
+            />
+          </section>
+        )}
+
+        {/* 3 · RUNWAY EXPLORER ────────────────────────────────────── */}
         {!loading && survival && (
           <section id="sec-runway" className="section-enter">
             <RunwayExplorer
@@ -687,19 +706,6 @@ export default function RunPage() {
           </section>
         )}
 
-        {/* 14 · AUTONOMOUS CFO AGENT ──────────────────────────────── */}
-        {!loading && (
-          <section id="sec-agent" className="section-enter">
-            <SectionHeading label="Autonomous CFO Agent"
-              sub="Claude Haiku perceives · reasons · plans · executes · learns · ~$0.003/cycle" />
-            <AutonomousAgentSection
-              runId={runId as string}
-              companyName={companyName || "the company"}
-              sector={sector || "saas"}
-            />
-          </section>
-        )}
-
         {/* 15 · AI INTELLIGENCE CENTER ─────────────────────────────── */}
         {!loading && (
           <section id="sec-ai" className="section-enter">
@@ -707,140 +713,47 @@ export default function RunPage() {
               sub="Select a tool · generate your output · Claude Haiku · ~$0.003/call" />
 
             <div className="card-brutal overflow-hidden">
-              <div className="flex min-h-[520px]">
 
-                {/* ── Left sidebar: tool selector ────────────────────── */}
-                <div className="w-52 flex-shrink-0 border-r border-gray-100 bg-gray-50/50 flex flex-col">
+              {/* ── Tool tab bar ──────────────────────────────────────── */}
+              <div className="border-b border-gray-100 bg-gray-50/60 px-4 pt-3 pb-0">
+                <div className="flex gap-1 overflow-x-auto no-scrollbar">
                   {[
-                    {
-                      id: "board_qa",
-                      icon: <Zap className="h-4 w-4" />,
-                      title: "Board Q&A",
-                      sub: "Adversarial prep",
-                      color: "text-blue-600",
-                      bg: "bg-blue-50",
-                      generated: !!boardQs,
-                      loading: boardLoading,
-                    },
-                    {
-                      id: "cfo_report",
-                      icon: <FileText className="h-4 w-4" />,
-                      title: "CFO Report",
-                      sub: "Full briefing",
-                      color: "text-gray-600",
-                      bg: "bg-gray-100",
-                      generated: !!report,
-                      loading: reportLoading,
-                    },
-                    {
-                      id: "vc_verdict",
-                      icon: <Scale className="h-4 w-4" />,
-                      title: "VC Verdict",
-                      sub: "PASS / WATCH / INVEST",
-                      color: "text-amber-600",
-                      bg: "bg-amber-50",
-                      generated: !!vcMemo,
-                      loading: vcMemoLoading,
-                      disabled: !survival,
-                    },
-                    {
-                      id: "investor_update",
-                      icon: <Mail className="h-4 w-4" />,
-                      title: "Investor Update",
-                      sub: "Copy-paste email",
-                      color: "text-blue-500",
-                      bg: "bg-blue-50",
-                      generated: !!investorUpdate,
-                      loading: investorUpdateLoading,
-                      disabled: !survival,
-                    },
-                    {
-                      id: "board_deck",
-                      icon: <FileText className="h-4 w-4" />,
-                      title: "Board Deck",
-                      sub: "10-slide PowerPoint",
-                      color: "text-purple-600",
-                      bg: "bg-purple-50",
-                      generated: false,
-                      loading: false,
-                    },
-                    {
-                      id: "pre_mortem",
-                      icon: <Skull className="h-4 w-4" />,
-                      title: "Pre-mortem",
-                      sub: "3 failure scenarios",
-                      color: "text-red-600",
-                      bg: "bg-red-50",
-                      generated: !!preMortem,
-                      loading: preMortemLoading,
-                      disabled: !survival,
-                    },
-                    {
-                      id: "board_chat",
-                      icon: <MessageCircle className="h-4 w-4" />,
-                      title: "CFO Chat",
-                      sub: "Multi-turn Q&A",
-                      color: "text-indigo-600",
-                      bg: "bg-indigo-50",
-                      generated: chatMessages.length > 0,
-                      loading: chatLoading,
-                    },
-                    {
-                      id: "cap_table",
-                      icon: <Calculator className="h-4 w-4" />,
-                      title: "Cap Table",
-                      sub: "Dilution simulator",
-                      color: "text-teal-600",
-                      bg: "bg-teal-50",
-                      generated: false,
-                      loading: false,
-                    },
-                    {
-                      id: "compliance",
-                      icon: <ShieldCheck className="h-4 w-4" />,
-                      title: "Compliance",
-                      sub: "Autopilot checklist",
-                      color: "text-green-600",
-                      bg: "bg-green-50",
-                      generated: false,
-                      loading: false,
-                    },
-                    {
-                      id: "benchmarker",
-                      icon: <BarChart3 className="h-4 w-4" />,
-                      title: "Benchmarker",
-                      sub: "Industry percentiles",
-                      color: "text-violet-600",
-                      bg: "bg-violet-50",
-                      generated: !!benchmarks,
-                      loading: benchmarksLoading,
-                    },
-                  ].map(tool => (
-                    <button
-                      key={tool.id}
-                      onClick={() => setActiveAITool(tool.id)}
-                      disabled={tool.disabled}
-                      className={`flex items-center gap-3 px-4 py-4 text-left transition-all border-b border-gray-100 last:border-0 disabled:opacity-40 disabled:cursor-not-allowed
-                        ${activeAITool === tool.id
-                          ? "border-l-4 border-l-blue-600 bg-white shadow-sm"
-                          : "border-l-4 border-l-transparent hover:bg-white/60"}`}
-                    >
-                      <div className={`h-8 w-8 rounded-xl flex items-center justify-center flex-shrink-0 ${tool.bg} ${tool.color}`}>
-                        {tool.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : tool.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-gray-900 truncate">{tool.title}</div>
-                        <div className="text-[10px] text-gray-400 truncate">{tool.sub}</div>
-                      </div>
-                      {tool.generated && (
-                        <span className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0" title="Generated" />
-                      )}
-                    </button>
-                  ))}
+                    { id: "board_qa",       icon: <Zap className="h-3.5 w-3.5" />,         title: "Board Q&A",      color: "text-blue-600",   active_bg: "bg-blue-600",   generated: !!boardQs,              loading: boardLoading },
+                    { id: "cfo_report",     icon: <FileText className="h-3.5 w-3.5" />,     title: "CFO Report",     color: "text-gray-600",   active_bg: "bg-gray-700",   generated: !!report,               loading: reportLoading },
+                    { id: "vc_verdict",     icon: <Scale className="h-3.5 w-3.5" />,        title: "VC Verdict",     color: "text-amber-600",  active_bg: "bg-amber-500",  generated: !!vcMemo,               loading: vcMemoLoading,         disabled: !survival },
+                    { id: "investor_update",icon: <Mail className="h-3.5 w-3.5" />,         title: "Investor Update",color: "text-blue-500",   active_bg: "bg-blue-500",   generated: !!investorUpdate,       loading: investorUpdateLoading, disabled: !survival },
+                    { id: "board_deck",     icon: <FileText className="h-3.5 w-3.5" />,     title: "Board Deck",     color: "text-purple-600", active_bg: "bg-purple-600", generated: false,                  loading: false },
+                    { id: "pre_mortem",     icon: <Skull className="h-3.5 w-3.5" />,        title: "Pre-mortem",     color: "text-red-600",    active_bg: "bg-red-600",    generated: !!preMortem,            loading: preMortemLoading,      disabled: !survival },
+                    { id: "board_chat",     icon: <MessageCircle className="h-3.5 w-3.5" />,title: "CFO Chat",       color: "text-indigo-600", active_bg: "bg-indigo-600", generated: chatMessages.length > 0,loading: chatLoading },
+                    { id: "cap_table",      icon: <Calculator className="h-3.5 w-3.5" />,   title: "Cap Table",      color: "text-teal-600",   active_bg: "bg-teal-600",   generated: false,                  loading: false },
+                    { id: "compliance",     icon: <ShieldCheck className="h-3.5 w-3.5" />,  title: "Compliance",     color: "text-green-600",  active_bg: "bg-green-600",  generated: false,                  loading: false },
+                    { id: "benchmarker",    icon: <BarChart3 className="h-3.5 w-3.5" />,    title: "Benchmarker",    color: "text-violet-600", active_bg: "bg-violet-600", generated: !!benchmarks,           loading: benchmarksLoading },
+                  ].map(tool => {
+                    const isActive = activeAITool === tool.id;
+                    return (
+                      <button
+                        key={tool.id}
+                        onClick={() => setActiveAITool(tool.id)}
+                        disabled={tool.disabled}
+                        className={`relative flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-all rounded-t-lg disabled:opacity-40 disabled:cursor-not-allowed
+                          ${isActive
+                            ? "text-gray-900 bg-white border border-gray-200 border-b-white -mb-px"
+                            : `${tool.color} hover:bg-white/50`}`}
+                      >
+                        {tool.loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : tool.icon}
+                        {tool.title}
+                        {tool.generated && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
 
-                {/* ── Right panel: tool output ───────────────────────── */}
-                <div className="flex-1 min-w-0 p-6 overflow-auto" key={activeAITool}>
+              {/* ── Tool output panel ─────────────────────────────────── */}
+              <div className="min-h-[420px]">
+                <div className="p-6 overflow-auto" key={activeAITool}>
 
                   {activeAITool === "board_qa" && (
                     <div className="h-full flex flex-col">

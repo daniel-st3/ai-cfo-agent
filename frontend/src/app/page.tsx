@@ -407,13 +407,13 @@ export default function HomePage() {
       </header>
 
       {/* ── Main ───────────────────────────────────────────────────── */}
-      <main className="relative flex-1 flex flex-col items-center justify-center px-4 py-16">
+      <main className="relative flex-1 flex flex-col items-center justify-center px-4 py-10">
 
         {!isRunning ? (
           <div className="w-full max-w-3xl animate-fade-in-up">
 
             {/* ── HERO ─────────────────────────────────────────────── */}
-            <div className="text-center mb-12">
+            <div className="text-center mb-8">
               <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
                 <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-4 py-1.5 text-xs font-medium text-blue-600">
                   <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse inline-block" />
@@ -425,7 +425,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <h1 className="text-[clamp(3.5rem,10vw,7.5rem)] font-bold tracking-tight leading-[0.95] text-gray-900 mb-5">
+              <h1 className="text-[clamp(3rem,8vw,6rem)] font-bold tracking-tight leading-[0.95] text-gray-900 mb-4">
                 AI <span className="text-gradient-blue">CFO</span>
               </h1>
 
@@ -676,100 +676,63 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* ── FILE FORMAT GUIDE ─────────────────────────────────── */}
-            <div className="mt-12">
-              <div className="flex items-center gap-2 mb-5">
+            {/* ── FILE FORMAT GUIDE (collapsible) ──────────────────── */}
+            <details className="mt-8 group">
+              <summary className="flex items-center gap-2 cursor-pointer list-none select-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors shadow-sm">
                 <Info className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <h3 className="text-sm font-semibold text-gray-700">What your files need to include</h3>
-                <div className="h-px flex-1 bg-gray-200" />
-              </div>
+                <span>What your files need to include</span>
+                <span className="ml-auto text-xs text-gray-400 font-normal group-open:hidden">Show format guide</span>
+                <span className="ml-auto text-xs text-gray-400 font-normal hidden group-open:block">Hide</span>
+              </summary>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                 {/* CSV / Excel */}
                 <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-50 flex-shrink-0">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-green-50 flex-shrink-0">
                       <FileSpreadsheet className="h-4 w-4 text-green-600" />
                     </div>
                     <div>
                       <div className="text-sm font-bold text-gray-900">CSV &amp; Excel</div>
-                      <div className="text-[10px] text-gray-400 font-medium">.csv · .xlsx · .xls</div>
+                      <div className="text-[10px] text-gray-400">.csv · .xlsx · .xls</div>
                     </div>
                   </div>
-
-                  <p className="text-[11px] text-gray-500 mb-3 font-medium uppercase tracking-wide">Required columns</p>
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {["week_start", "customer_id", "transaction_type", "amount"].map(col => (
-                      <code key={col} className="rounded-lg bg-gray-100 border border-gray-200 px-2 py-1 text-[11px] font-mono text-gray-700">{col}</code>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {["date", "category", "amount", "customer_id"].map(col => (
+                      <code key={col} className="rounded-lg bg-gray-100 border border-gray-200 px-2 py-0.5 text-[11px] font-mono text-gray-700">{col}</code>
                     ))}
                   </div>
-
-                  <div className="space-y-2 text-[11px] text-gray-500">
-                    <div className="flex gap-2">
-                      <span className="text-gray-300 flex-shrink-0">·</span>
-                      <span><span className="font-mono text-gray-700">week_start</span>: ISO date e.g. <span className="font-mono text-blue-600">2024-01-08</span></span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-gray-300 flex-shrink-0">·</span>
-                      <span><span className="font-mono text-gray-700">transaction_type</span>: one of <span className="font-mono text-gray-600">subscription_revenue</span>, <span className="font-mono text-gray-600">churn_refund</span>, <span className="font-mono text-gray-600">cogs</span>, <span className="font-mono text-gray-600">salary_expense</span>, <span className="font-mono text-gray-600">marketing_expense</span></span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-gray-300 flex-shrink-0">·</span>
-                      <span><span className="font-mono text-gray-700">amount</span>: positive number, USD</span>
-                    </div>
-                  </div>
-
-                  <a
-                    href="http://localhost:8000/sample-csv"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                  >
+                  <button onClick={downloadTemplate}
+                    className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                     <Download className="h-3.5 w-3.5" />
                     Download sample CSV template
-                  </a>
+                  </button>
                 </div>
 
                 {/* PDF */}
                 <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 flex-shrink-0">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 flex-shrink-0">
                       <FileText className="h-4 w-4 text-red-500" />
                     </div>
                     <div>
                       <div className="text-sm font-bold text-gray-900">PDF Statements</div>
-                      <div className="text-[10px] text-gray-400 font-medium">.pdf · max 50 pages</div>
+                      <div className="text-[10px] text-gray-400">.pdf · max 50 pages</div>
                     </div>
                   </div>
-
-                  <p className="text-[11px] text-gray-500 mb-3 font-medium uppercase tracking-wide">Supported document types</p>
-
-                  <div className="space-y-2 text-[11px] text-gray-500 mb-4">
-                    {[
-                      "Balance sheets & P&L statements",
-                      "Bank statements & cash flow reports",
-                      "QuickBooks, Xero, Wave, FreshBooks exports",
-                      "Text-based PDFs only (not scanned images)",
-                    ].map(item => (
-                      <div key={item} className="flex gap-2">
-                        <span className="text-green-500 flex-shrink-0">✓</span>
-                        <span>{item}</span>
-                      </div>
+                  <div className="space-y-1 text-[11px] text-gray-500">
+                    {["Balance sheets & P&L statements", "Bank statements & cash flow", "QuickBooks, Xero, Wave exports", "Text-based PDFs only"].map(item => (
+                      <div key={item} className="flex gap-1.5"><span className="text-green-500 flex-shrink-0">✓</span>{item}</div>
                     ))}
-                  </div>
-
-                  <div className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-[11px] text-amber-700">
-                    Photo and scanned PDFs are not supported. Export as text from your accounting software.
                   </div>
                 </div>
 
               </div>
-
-              <p className="text-center text-[10px] text-gray-400 mt-4">
-                Add up to 5 files. CSVs are merged automatically · PDFs are parsed with text extraction.
+              <p className="text-center text-[10px] text-gray-400 mt-3">
+                Add up to 5 files · CSVs merged automatically · PDFs parsed with text extraction
               </p>
-            </div>
+            </details>
 
           </div>
         ) : (

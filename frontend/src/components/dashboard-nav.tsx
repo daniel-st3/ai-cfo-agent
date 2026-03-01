@@ -49,7 +49,7 @@ export function DashboardNav({
   // Track which section is in viewport
   useEffect(() => {
     const ids = [
-      "sec-kpi", "sec-runway", "sec-forecast", "sec-revenue",
+      "sec-kpi", "sec-agent", "sec-runway", "sec-forecast", "sec-revenue",
       "sec-intel", "sec-scenarios", "sec-deepdive", "sec-customers",
       "sec-fraud", "sec-anomalies", "sec-fundraising", "sec-briefing", "sec-ai",
     ];
@@ -90,6 +90,17 @@ export function DashboardNav({
       border: "border-blue-200",
       ring: "ring-blue-400",
       text: "text-blue-700",
+    },
+    {
+      id: "sec-agent",
+      label: "Auto CFO",
+      icon: "🤖",
+      getValue: () => "AI Agent",
+      getSub: () => "24/7 monitoring",
+      gradient: "from-purple-50 to-purple-100",
+      border: "border-purple-200",
+      ring: "ring-purple-400",
+      text: "text-purple-700",
     },
     {
       id: "sec-runway",
@@ -230,8 +241,13 @@ export function DashboardNav({
 
   return (
     <div className="sticky top-[54px] z-30 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
-      <div className="mx-auto max-w-screen-xl px-4 sm:px-6">
-        <div className="flex gap-1.5 overflow-x-auto py-2 no-scrollbar">
+      <div className="mx-auto max-w-screen-xl px-4 sm:px-6 relative">
+        {/* Gradient fade — left edge */}
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white/95 to-transparent z-10 sm:left-6" />
+        {/* Gradient fade — right edge */}
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/95 to-transparent z-10 sm:right-6" />
+
+        <div className="flex gap-1.5 overflow-x-auto py-2 no-scrollbar px-2">
           {sections.map(s => {
             const isActive = active === s.id;
             return (
@@ -239,7 +255,7 @@ export function DashboardNav({
                 key={s.id}
                 onClick={() => scrollTo(s.id)}
                 className={`
-                  group flex-shrink-0 flex items-center gap-2 rounded-xl border px-3 py-2
+                  group flex-shrink-0 flex items-center gap-2 rounded-xl border px-3 py-1.5
                   bg-gradient-to-br ${s.gradient} ${s.border}
                   transition-all duration-200 hover:shadow-md hover:-translate-y-0.5
                   ${isActive ? `ring-2 ${s.ring} ring-offset-1 shadow-sm -translate-y-0.5` : "hover:scale-[1.02]"}
@@ -247,18 +263,15 @@ export function DashboardNav({
                 aria-label={`Jump to ${s.label}`}
               >
                 {/* Icon */}
-                <span className="text-base leading-none flex-shrink-0">{s.icon}</span>
+                <span className="text-sm leading-none flex-shrink-0">{s.icon}</span>
 
                 {/* Text */}
                 <div className="text-left min-w-0">
                   <div className={`text-[10px] font-bold uppercase tracking-wide ${s.text} leading-none`}>
                     {s.label}
                   </div>
-                  <div className={`text-xs font-black tabular-nums ${s.text} leading-tight mt-0.5`}>
+                  <div className={`text-[11px] font-black tabular-nums ${s.text} leading-tight mt-0.5`}>
                     {s.getValue()}
-                  </div>
-                  <div className="text-[9px] text-gray-400 leading-none mt-0.5 truncate max-w-[80px]">
-                    {s.getSub()}
                   </div>
                 </div>
               </button>

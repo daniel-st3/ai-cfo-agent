@@ -3,6 +3,119 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Database, BarChart3, ScanSearch, Dices, TrendingUp, Globe2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// ── Fake agent activity messages per pipeline step ────────────────────────────
+const STEP_AGENT_MESSAGES: Record<string, string[]> = {
+  ingestion: [
+    "IngestionAgent · parsing transaction rows…",
+    "IngestionAgent · normalizing date formats…",
+    "IngestionAgent · categorizing 3,416 records ✓",
+  ],
+  kpi: [
+    "KPIAgent · computing weekly MRR snapshots…",
+    "KPIAgent · deriving CAC from marketing spend…",
+    "KPIAgent · calculating LTV with trailing churn ✓",
+  ],
+  anomalies: [
+    "AnomalyAgent · fitting IsolationForest (contamination=0.05)…",
+    "AnomalyAgent · scoring 78 weekly feature vectors…",
+    "AnomalyAgent · flagging 5 HIGH severity anomalies ✓",
+  ],
+  monte_carlo: [
+    "SurvivalAgent · seeding 1,000 Monte Carlo paths…",
+    "SurvivalAgent · simulating burn variance (σ=20%)…",
+    "SurvivalAgent · ruin probability at 90d / 180d / 365d ✓",
+  ],
+  scenarios: [
+    "ScenarioAgent · applying Bear stress (burn +30%, MRR -20%)…",
+    "ScenarioAgent · computing Base trajectory…",
+    "ScenarioAgent · projecting Bull runway with 15% MRR growth ✓",
+  ],
+  market: [
+    "MarketAgent · querying competitor signals (DuckDuckGo)…",
+    "MarketAgent · parsing hiring signals + pricing changes…",
+    "MarketAgent · ranking threat radar by severity ✓",
+  ],
+};
+
+// ── Live agent log feed ───────────────────────────────────────────────────────
+function AgentLog({ completedIds, runningId }: { completedIds: string[]; runningId: string | null }) {
+  const [lines, setLines] = useState<string[]>([]);
+  const logRef = useRef<HTMLDivElement>(null);
+  const shownRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    // When a step completes, add its messages to the log
+    completedIds.forEach(id => {
+      const msgs = STEP_AGENT_MESSAGES[id];
+      if (!msgs) return;
+      msgs.forEach(msg => {
+        const key = `${id}:${msg}`;
+        if (!shownRef.current.has(key)) {
+          shownRef.current.add(key);
+          setLines(prev => [...prev, msg]);
+        }
+      });
+    });
+    // When a step is running, show the first message after a short delay
+    if (runningId) {
+      const msgs = STEP_AGENT_MESSAGES[runningId];
+      if (msgs?.[0]) {
+        const key = `${runningId}:${msgs[0]}`;
+        if (!shownRef.current.has(key)) {
+          shownRef.current.add(key);
+          const t = setTimeout(() => setLines(prev => [...prev, msgs[0]]), 400);
+          return () => clearTimeout(t);
+        }
+      }
+    }
+  }, [completedIds, runningId]);
+
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [lines]);
+
+  if (lines.length === 0) return null;
+
+  return (
+    <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-950 overflow-hidden shadow-inner">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-800">
+        <div className="flex gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-500/70" />
+        </div>
+        <span className="text-[10px] font-mono text-gray-500 ml-1">agent · activity log</span>
+        <span className="ml-auto flex items-center gap-1 text-[10px] font-mono text-green-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+          live
+        </span>
+      </div>
+      <div ref={logRef} className="h-32 overflow-y-auto px-4 py-3 space-y-1 font-mono text-[11px] no-scrollbar">
+        {lines.map((line, i) => {
+          const isDone = line.includes("✓");
+          const [agent, ...rest] = line.split(" · ");
+          return (
+            <div key={i} className="flex gap-2 animate-fade-in-up">
+              <span className="text-blue-400 flex-shrink-0">[{agent}]</span>
+              <span className={isDone ? "text-green-400" : "text-gray-400"}>{rest.join(" · ")}</span>
+            </div>
+          );
+        })}
+        {runningId && (
+          <div className="flex gap-2">
+            <span className="text-blue-400 flex-shrink-0">{">"}</span>
+            <span className="text-gray-500 animate-pulse">processing<span className="inline-flex gap-0.5 ml-0.5">
+              {[0,1,2].map(i => <span key={i} className="h-1 w-1 rounded-full bg-gray-500 inline-block" style={{ animationDelay: `${i * 150}ms` }} />)}
+            </span></span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export const PIPELINE_STEPS = [
   { id: "ingestion",   label: "Ingestion",      sub: "Loading & parsing data",          Icon: Database,   color: "#0071e3" },
   { id: "kpi",         label: "KPI Compute",    sub: "Calculating weekly KPI snapshots", Icon: BarChart3,  color: "#6366f1" },
@@ -178,6 +291,9 @@ export function PipelineView({ completedIds, stepDetails, celebrating = false }:
         <span>{completedIds.length}/{PIPELINE_STEPS.length} complete</span>
         <span>100%</span>
       </div>
+
+      {/* Agent activity log */}
+      <AgentLog completedIds={completedIds} runningId={runningId} />
     </div>
   );
 }
