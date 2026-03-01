@@ -11,13 +11,17 @@ Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 
 
 ## Screenshots
 
-| Dashboard (14 sections) | Morning Briefing |
+| Landing Page | Dashboard Overview |
 |---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Morning Briefing](docs/screenshots/morning_briefing.png) |
+| ![Landing](docs/screenshots/01-landing.png) | ![Dashboard](docs/screenshots/02-dashboard-overview.png) |
 
-| Runway Explorer | Fraud Monitor |
+| Autonomous CFO Agent (section 2) | AI Intelligence Center |
 |---|---|
-| ![Runway Explorer](docs/screenshots/runway_explorer.png) | ![Fraud Monitor](docs/screenshots/fraud_monitor.png) |
+| ![Autonomous Agent](docs/screenshots/03-autonomous-agent.png) | ![AI Center](docs/screenshots/04-ai-intelligence-center.png) |
+
+| Pipeline with Agent Activity Log | Runway Explorer |
+|---|---|
+| ![Pipeline Log](docs/screenshots/06-pipeline-agent-log.png) | ![Runway](docs/screenshots/05-runway-explorer.png) |
 
 ---
 
