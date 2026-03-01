@@ -6,13 +6,14 @@ Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 
 
 ---
 
-## 21 Features
+## 22 Features
 
 | Category | Feature |
 |---|---|
 | **KPI Engine** | 7 KPI cards (MRR, ARR, Burn, Gross Margin, Churn, CAC, LTV) + click-to-expand deep-dive charts |
 | **Survival** | Monte Carlo (10K simulations) → ruin probability at 90d / 180d / 365d |
-| **Runway** | Live countdown clock + cut-burn / grow-MRR sliders |
+| **Runway** | Interactive arc gauge + cut-burn / grow-MRR sliders with per-lever impact chips |
+| **Morning Briefing** | 7 AM proactive text: runway, urgent alerts, good news, 3 AI action items |
 | **Scenarios** | Bear / Base / Bull stress test with Series A readiness verdict |
 | **AI Reports** | Board Q&A (8 adversarial VC questions), CFO Report, VC Verdict, Investor Update |
 | **CFO Chat** | Multi-turn board prep chat grounded in your live KPI data |
@@ -92,7 +93,7 @@ Download a blank template from the upload page or `GET /analyze/template`.
 ┌─────────────────────────────────────────────────────────┐
 │  Next.js 15 App Router (port 3000)                       │
 │  ├── / (upload + pipeline animation)                     │
-│  ├── /run/[runId] (full dashboard — 13 sections)         │
+│  ├── /run/[runId] (full dashboard — 14 sections)         │
 │  └── /integrations/stripe · /integrations/quickbooks    │
 └──────────────────────┬──────────────────────────────────┘
                        │  REST  (NEXT_PUBLIC_API_URL)
@@ -107,6 +108,7 @@ Download a blank template from the upload page or `GET /analyze/template`.
 │  POST /investor-update→ monthly LP update email          │
 │  POST /pre-mortem     → 3 failure scenarios              │
 │  POST /board-prep/chat→ multi-turn CFO chat              │
+│  POST /briefing/preview→ morning CFO briefing preview    │
 │  GET  /benchmarks     → industry percentile comparison   │
 │  GET  /runs/{id}/...  → KPIs · anomalies · signals       │
 │                                                          │
@@ -114,6 +116,7 @@ Download a blank template from the upload page or `GET /analyze/template`.
 │  agents/insight_writer   Claude Haiku AI reports         │
 │  agents/market_agent     Competitor intel (free APIs)    │
 │  agents/ingestion.py     CSV / PDF parsing               │
+│  agents/morning_briefing Proactive daily CFO briefing    │
 │  agents/stripe_sync      Stripe subscription data        │
 │  agents/quickbooks_sync  QuickBooks P&L data             │
 │                                                          │
@@ -144,12 +147,16 @@ Regenerate: `python3 data/gen_drama.py`
 | Component | Cost |
 |---|---|
 | Claude Haiku (all AI reports per run) | ~$0.003–0.025 |
+| Morning briefing (Claude Haiku) | ~$0.003/day per user |
+| SMS delivery (Twilio) | ~$0.01/message |
+| Email delivery (SendGrid) | $0 (free tier) |
 | Competitor news (DuckDuckGo) | $0 |
 | Hiring signals (DuckDuckGo) | $0 |
 | Pricing scrape (httpx + BeautifulSoup) | $0 |
 | Anomaly detection (IsolationForest) | $0 |
 | Monte Carlo survival (NumPy) | $0 |
 | **Total per run** | **~$0.003–0.025** |
+| **Daily briefing** | **~$0.013–0.033/user/day** |
 
 ---
 
@@ -181,7 +188,7 @@ graph/           LangGraph orchestration
 frontend/        Next.js 15 App Router dashboard
 data/            Demo CSV + competitor profiles + industry benchmarks
 alembic/         Database migration scripts
-scripts/         Playwright visual check, utilities
+scripts/         Playwright visual check, morning briefing cron script
 ```
 
 ---

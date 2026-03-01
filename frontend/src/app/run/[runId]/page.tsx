@@ -64,32 +64,49 @@ function Skel({ h = "h-48" }: { h?: string }) {
 
 interface KPICardProps {
   label: string; value: string; wow?: number; sub?: string; valueColor?: string;
+  accent?: { bar: string; bg: string; ring: string };
   metricKey?: string; activeKPI?: string | null; onKPIClick?: (k: string) => void;
 }
-function KPICard({ label, value, wow, sub, valueColor, metricKey, activeKPI, onKPIClick }: KPICardProps) {
-  const up      = wow !== undefined && wow > 0.0001;
-  const down    = wow !== undefined && wow < -0.0001;
+function KPICard({ label, value, wow, sub, valueColor, accent, metricKey, activeKPI, onKPIClick }: KPICardProps) {
+  const up       = wow !== undefined && wow > 0.0001;
+  const down     = wow !== undefined && wow < -0.0001;
   const isActive = metricKey && activeKPI === metricKey;
   return (
     <div
       onClick={() => metricKey && onKPIClick?.(metricKey)}
-      className={`card-metric card-hover tilt-card relative p-4 flex flex-col gap-1 h-full group overflow-hidden transition-all
+      className={`relative flex flex-col h-full overflow-hidden rounded-2xl border bg-white
+        transition-all duration-200
         ${metricKey ? "cursor-pointer" : "cursor-default"}
-        ${isActive ? "ring-2 ring-blue-500 ring-offset-1 shadow-md" : ""}`}
+        ${isActive
+          ? `ring-2 shadow-lg ${accent?.ring ?? "ring-blue-400"} ring-offset-1`
+          : "border-gray-200/80 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+        }
+        group`}
     >
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 truncate">{label}</div>
-      <div key={value} className={`text-2xl font-bold leading-none truncate mt-0.5 animate-number-pop ${valueColor ?? "text-gray-900"}`}>{value}</div>
-      {wow !== undefined && (
-        <div className={`flex items-center gap-1 text-xs font-semibold mt-1 ${up ? "text-green-600" : down ? "text-red-500" : "text-gray-400"}`}>
-          {up ? <TrendingUp className="h-3 w-3" /> : down ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
-          {Math.abs(wow * 100).toFixed(1)}% WoW
-        </div>
+      {/* Coloured top accent bar */}
+      <div className={`h-0.5 w-full ${accent?.bar ?? "bg-gray-200"}`} />
+
+      {/* Subtle gradient tint */}
+      {accent?.bg && (
+        <div className={`absolute inset-0 ${accent.bg} pointer-events-none`} />
       )}
-      {sub && <div className="text-[10px] text-gray-400 mt-0.5 leading-snug">{sub}</div>}
-      {metricKey && <div className="text-[9px] text-blue-400 mt-auto pt-1 opacity-0 group-hover:opacity-100 transition-opacity">Click to explore</div>}
-      {/* Shimmer on hover */}
-      <div className="absolute inset-0 rounded-[inherit] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
-        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%)", backgroundSize: "200% 200%", backgroundPosition: "120% 120%" }} />
+
+      <div className="relative p-4 flex flex-col gap-1 flex-1">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 truncate">{label}</div>
+        <div key={value} className={`text-2xl font-bold leading-none truncate mt-0.5 animate-number-pop ${valueColor ?? "text-gray-900"}`}>{value}</div>
+        {wow !== undefined && (
+          <div className={`flex items-center gap-1 text-[11px] font-semibold mt-1 ${up ? "text-green-600" : down ? "text-red-500" : "text-gray-400"}`}>
+            {up ? <TrendingUp className="h-3 w-3" /> : down ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+            {Math.abs(wow * 100).toFixed(1)}% WoW
+          </div>
+        )}
+        {sub && <div className="text-[10px] text-gray-400 mt-0.5 leading-snug">{sub}</div>}
+        {metricKey && (
+          <div className="text-[9px] text-blue-400 mt-auto pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            Click to explore ↗
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -444,22 +461,41 @@ export default function RunPage() {
           ) : latest ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 items-stretch">
-                <div className="section-enter stagger-1"><KPICard label="MRR / Week"   value={fmtK(latest.mrr)}     wow={wow.mrr}       sub={`ARR: ${fmtK(latest.arr)}`} metricKey="mrr"          activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
-                <div className="section-enter stagger-2"><KPICard label="ARR"          value={fmtK(latest.arr)}     wow={wow.arr}                                            metricKey="arr"          activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
-                <div className="section-enter stagger-3"><KPICard label="Burn / Week"  value={fmtK(latest.burn_rate)} wow={wow.burn_rate} valueColor="text-red-500" sub="Weekly cash out" metricKey="burn_rate" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
-                <div className="section-enter stagger-4"><KPICard label="Gross Margin" value={fmtPct(Math.abs(latest.gross_margin))} wow={wow.gross_margin}
-                  valueColor={latest.gross_margin >= 0.4 ? "text-green-600" : "text-red-500"}
-                  sub={latest.gross_margin < 0 ? "Negative margin" : undefined} metricKey="gross_margin" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
-                <div className="section-enter stagger-5"><KPICard label="Churn Rate"   value={fmtPct(latest.churn_rate)} wow={wow.churn_rate}
-                  valueColor={latest.churn_rate < 0.05 ? "text-green-600" : "text-amber-600"} metricKey="churn_rate" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
+                <div className="section-enter stagger-1"><KPICard label="MRR / Week"
+                  value={fmtK(latest.mrr)} wow={wow.mrr} sub={`ARR: ${fmtK(latest.arr)}`}
+                  accent={{ bar: "bg-blue-500", bg: "bg-gradient-to-br from-blue-50/30 to-transparent", ring: "ring-blue-400" }}
+                  metricKey="mrr" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
+                <div className="section-enter stagger-2"><KPICard label="ARR"
+                  value={fmtK(latest.arr)} wow={wow.arr}
+                  accent={{ bar: "bg-indigo-500", bg: "bg-gradient-to-br from-indigo-50/30 to-transparent", ring: "ring-indigo-400" }}
+                  metricKey="arr" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
+                <div className="section-enter stagger-3"><KPICard label="Burn / Week"
+                  value={fmtK(latest.burn_rate)} wow={wow.burn_rate} valueColor="text-rose-600" sub="Weekly cash out"
+                  accent={{ bar: "bg-rose-500", bg: "bg-gradient-to-br from-rose-50/30 to-transparent", ring: "ring-rose-400" }}
+                  metricKey="burn_rate" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
+                <div className="section-enter stagger-4"><KPICard label="Gross Margin"
+                  value={fmtPct(Math.abs(latest.gross_margin))} wow={wow.gross_margin}
+                  valueColor={latest.gross_margin >= 0.4 ? "text-emerald-600" : "text-red-500"}
+                  sub={latest.gross_margin < 0 ? "Negative margin" : undefined}
+                  accent={{ bar: "bg-emerald-500", bg: "bg-gradient-to-br from-emerald-50/30 to-transparent", ring: "ring-emerald-400" }}
+                  metricKey="gross_margin" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
+                <div className="section-enter stagger-5"><KPICard label="Churn Rate"
+                  value={fmtPct(latest.churn_rate)} wow={wow.churn_rate}
+                  valueColor={latest.churn_rate < 0.05 ? "text-amber-600" : "text-red-500"}
+                  accent={{ bar: "bg-amber-500", bg: "bg-gradient-to-br from-amber-50/30 to-transparent", ring: "ring-amber-400" }}
+                  metricKey="churn_rate" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
                 <div className="section-enter stagger-6"><KPICard label="CAC"
                   value={latest.cac > 0 ? fmtK(latest.cac) : "N/A"}
                   wow={latest.cac > 0 ? wow.cac : undefined}
-                  valueColor={latest.cac > 0 ? "text-red-500" : "text-gray-400"} metricKey="cac" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
+                  valueColor={latest.cac > 0 ? "text-orange-600" : "text-gray-400"}
+                  accent={{ bar: "bg-orange-500", bg: "bg-gradient-to-br from-orange-50/30 to-transparent", ring: "ring-orange-400" }}
+                  metricKey="cac" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
                 <div className="section-enter stagger-7"><KPICard label="LTV"
                   value={latest.ltv > 0 ? fmtK(latest.ltv) : "N/A"}
                   wow={latest.ltv > 0 ? wow.ltv : undefined}
-                  valueColor={latest.ltv > 0 ? "text-blue-600" : "text-gray-400"} metricKey="ltv" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
+                  valueColor={latest.ltv > 0 ? "text-violet-600" : "text-gray-400"}
+                  accent={{ bar: "bg-violet-500", bg: "bg-gradient-to-br from-violet-50/30 to-transparent", ring: "ring-violet-400" }}
+                  metricKey="ltv" activeKPI={activeKPI} onKPIClick={k => setActiveKPI(activeKPI === k ? null : k)} /></div>
               </div>
               {/* KPI deep-dive inline panel */}
               {activeKPI && snapshots.length > 1 && (

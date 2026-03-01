@@ -38,11 +38,16 @@ async def run() -> None:
 
         # ── 2. Click Run Demo ──────────────────────────────────────────────
         print("→ Clicking Run Demo…")
-        run_demo_btn = page.get_by_role("button", name="Run Demo")
-        if not await run_demo_btn.is_visible():
-            # fallback: find by text content
-            run_demo_btn = page.locator("button:has-text('Run Demo')").first
-        await run_demo_btn.click()
+        # Try several selectors — button text may vary
+        for selector in [
+            "button:has-text('Run Live Demo')",
+            "button:has-text('Run Demo')",
+            "button:has-text('Demo')",
+        ]:
+            run_demo_btn = page.locator(selector).first
+            if await run_demo_btn.is_visible(timeout=2000):
+                break
+        await run_demo_btn.click(timeout=10000)
 
         # Wait for pipeline animation to start
         await page.wait_for_timeout(2000)
@@ -73,28 +78,34 @@ async def run() -> None:
         # ── 5. Per-section screenshots ─────────────────────────────────────
         sections = [
             ("KPI Command Center",       "04_kpi_cards.png"),
-            ("Runway Countdown",         "05_runway_clock.png"),
-            ("Revenue & Survival",       "06_revenue_survival.png"),
-            ("Competitive Intelligence", "07_competitor_intel.png"),
-            ("Scenario Stress Test",     "08_scenarios.png"),
-            ("Financial Deep Dive",      "09_deep_dive.png"),
-            ("Customer Profitability",   "10_customer_matrix.png"),
-            ("Fraud Monitor",            "11_fraud_monitor.png"),
-            ("Anomaly Detection",        "12_anomalies.png"),
-            ("Fundraising Readiness",    "13_fundraising.png"),
-            ("AI Intelligence Center",   "14_ai_center.png"),
+            ("Runway Explorer",          "05_runway_explorer.png"),
+            ("13-Week Cash Position",    "06_cash_forecast.png"),
+            ("Revenue & Survival",       "07_revenue_survival.png"),
+            ("Competitive Intelligence", "08_competitor_intel.png"),
+            ("Scenario Stress Test",     "09_scenarios.png"),
+            ("Financial Deep Dive",      "10_deep_dive.png"),
+            ("Customer Profitability",   "11_customer_matrix.png"),
+            ("Fraud Monitor",            "12_fraud_monitor.png"),
+            ("Anomaly Detection",        "13_anomalies.png"),
+            ("Fundraising Readiness",    "14_fundraising.png"),
+            ("Morning CFO Briefing",     "15_morning_briefing.png"),
+            ("AI Intelligence Center",   "16_ai_center.png"),
         ]
 
         for heading_text, filename in sections:
             try:
+                # Try h2 first, then any element containing the text
                 heading = page.locator(f"h2:has-text('{heading_text}')").first
-                if await heading.is_visible():
+                if not await heading.is_visible(timeout=2000):
+                    heading = page.locator(f"*:has-text('{heading_text}')").first
+                if await heading.is_visible(timeout=2000):
                     await heading.scroll_into_view_if_needed()
-                    await page.wait_for_timeout(500)
+                    await page.wait_for_timeout(600)
+                    bbox = await heading.bounding_box()   # await bounding_box separately
+                    top_y = max(0, bbox["y"] - 20) if bbox else 0
                     await page.screenshot(
                         path=str(SHOTS_DIR / filename),
-                        clip={"x": 0, "y": max(0, await heading.bounding_box()["y"] - 20),
-                              "width": 1440, "height": 700},
+                        clip={"x": 0, "y": top_y, "width": 1440, "height": 700},
                     )
                     print(f"  ✓ {filename}")
                 else:

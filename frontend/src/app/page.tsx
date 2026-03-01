@@ -455,7 +455,7 @@ export default function HomePage() {
               ))}
             </div>
             <p className="text-center text-[11px] text-gray-400 mb-8 -mt-4">
-              Sample dataset · Acme SaaS Co. · 78 weeks of real-world startup financials
+              Sample dataset · Synapse AI · 78 weeks of real-world startup financials
             </p>
 
             {/* ── FORM ─────────────────────────────────────────────── */}
