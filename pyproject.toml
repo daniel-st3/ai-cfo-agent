@@ -2,7 +2,7 @@
 name = "ai-cfo-agent"
 version = "1.0.0"
 description = "Autonomous multi-agent AI CFO analyst"
-authors = ["AI CFO Team <ops@example.com>"]
+authors = ["Daniel Rodriguez <steven3102@hotmail.com>"]
 readme = "README.md"
 packages = [
   { include = "agents" },

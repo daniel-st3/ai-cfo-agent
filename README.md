@@ -1,8 +1,23 @@
 # AI CFO Agent
 
+[![GitHub stars](https://img.shields.io/github/stars/daniel-st3/ai-cfo-agent?style=social)](https://github.com/daniel-st3/ai-cfo-agent/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > **The AI CFO that 99% of startups can't afford — now open source.**
 
 Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 seconds — Monte Carlo survival analysis, VC investment memos, pre-mortem scenarios, cap table dilution, industry benchmarking, and more. Powered by Claude Haiku at **~$0.003 per run**.
+
+---
+
+## Screenshots
+
+| Dashboard (13 sections) | Morning Briefing |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Morning Briefing](docs/screenshots/morning_briefing.png) |
+
+| Runway Explorer | Fraud Monitor |
+|---|---|
+| ![Runway Explorer](docs/screenshots/runway_explorer.png) | ![Fraud Monitor](docs/screenshots/fraud_monitor.png) |
 
 ---
 
@@ -13,7 +28,7 @@ Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 
 | **KPI Engine** | 7 KPI cards (MRR, ARR, Burn, Gross Margin, Churn, CAC, LTV) + click-to-expand deep-dive charts |
 | **Survival** | Monte Carlo (10K simulations) → ruin probability at 90d / 180d / 365d |
 | **Runway** | Interactive arc gauge + cut-burn / grow-MRR sliders with per-lever impact chips |
-| **Morning Briefing** | 7 AM proactive text: runway, urgent alerts, good news, 3 AI action items |
+| **Morning Briefing** | 7 AM proactive text: runway, urgent alerts, 3 AI actions + iMessage preview in dashboard |
 | **Scenarios** | Bear / Base / Bull stress test with Series A readiness verdict |
 | **AI Reports** | Board Q&A (8 adversarial VC questions), CFO Report, VC Verdict, Investor Update |
 | **CFO Chat** | Multi-turn board prep chat grounded in your live KPI data |
@@ -39,14 +54,16 @@ Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 
 
 ```bash
 # 1. Clone
-git clone https://github.com/your-org/ai-cfo-agent.git
+git clone https://github.com/daniel-st3/ai-cfo-agent.git
 cd ai-cfo-agent
 
 # 2. Install backend dependencies
 pip install -e ".[ml]"          # ml group = scikit-learn, chronos (optional)
 
-# 3. Configure — only ANTHROPIC_API_KEY is required
+# 3. Configure — get your free API key at https://console.anthropic.com/keys
 cp .env.example .env
+# Open .env and set: ANTHROPIC_API_KEY=sk-ant-your-key-here
+# All other keys are optional (see API Keys section below)
 
 # 4. Start backend
 uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
@@ -93,7 +110,7 @@ Download a blank template from the upload page or `GET /analyze/template`.
 ┌─────────────────────────────────────────────────────────┐
 │  Next.js 15 App Router (port 3000)                       │
 │  ├── / (upload + pipeline animation)                     │
-│  ├── /run/[runId] (full dashboard — 14 sections)         │
+│  ├── /run/[runId] (full dashboard — 13 sections)         │
 │  └── /integrations/stripe · /integrations/quickbooks    │
 └──────────────────────┬──────────────────────────────────┘
                        │  REST  (NEXT_PUBLIC_API_URL)
@@ -148,8 +165,8 @@ Regenerate: `python3 data/gen_drama.py`
 |---|---|
 | Claude Haiku (all AI reports per run) | ~$0.003–0.025 |
 | Morning briefing (Claude Haiku) | ~$0.003/day per user |
-| SMS delivery (Twilio) | ~$0.01/message |
-| Email delivery (SendGrid) | $0 (free tier) |
+| SMS delivery (Twilio) | ~$0.01/message ([free trial](https://www.twilio.com/try-twilio)) |
+| Email delivery (SendGrid) | $0 ([free tier](https://sendgrid.com/pricing/): 100 emails/day) |
 | Competitor news (DuckDuckGo) | $0 |
 | Hiring signals (DuckDuckGo) | $0 |
 | Pricing scrape (httpx + BeautifulSoup) | $0 |
@@ -189,6 +206,7 @@ frontend/        Next.js 15 App Router dashboard
 data/            Demo CSV + competitor profiles + industry benchmarks
 alembic/         Database migration scripts
 scripts/         Playwright visual check, morning briefing cron script
+docs/            Screenshots
 ```
 
 ---
