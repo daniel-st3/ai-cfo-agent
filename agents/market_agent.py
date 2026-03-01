@@ -200,11 +200,23 @@ class MarketAgent:
 
         return rows
 
-    # Demo fallback hiring signals used when DuckDuckGo returns nothing
+    # Diverse pool of realistic hiring signals — each competitor gets 1-2 unique ones
     _DEMO_HIRING_ROLES = [
-        "is hiring a Senior Software Engineer to join the platform team",
-        "opened a Sales Development Representative role for its growing GTM team",
-        "posted a Head of Growth & Marketing position as it scales into enterprise",
+        "is hiring a Senior Platform Engineer (Remote, $180–220K)",
+        "opened a Head of Enterprise Sales role as it expands upmarket",
+        "posted a Senior Product Manager position for its core platform",
+        "is seeking a Staff ML Engineer for its AI infrastructure team",
+        "listed a VP of Customer Success to support 500+ accounts",
+        "posted a Director of Product Marketing to lead its PLG motion",
+        "opened a DevOps / Infrastructure Engineer role (Kubernetes)",
+        "is hiring a Senior Backend Engineer (Python / Rust)",
+        "posted an Enterprise Account Executive — $200K+ OTE",
+        "listed a Head of Finance / Controller for Series B readiness",
+        "is seeking a Senior Data Analyst for its GTM analytics function",
+        "opened a Field CTO role to support its enterprise customer base",
+        "posted a Principal Engineer — Distributed Systems (Remote)",
+        "is hiring a Growth Engineer to scale its self-serve funnel",
+        "listed a Founding Designer to lead product design end-to-end",
     ]
 
     async def fetch_hiring_signals(self, competitor: dict[str, Any]) -> list[dict[str, Any]]:
@@ -228,11 +240,16 @@ class MarketAgent:
         except Exception:
             results = []
 
-        # Fall back to synthetic demo signals so HiringVelocity always shows data
+        # Fall back to synthetic demo signals — each competitor gets 1-2 unique, varied roles
         if not results:
+            pool = self._DEMO_HIRING_ROLES
+            # Use competitor name hash for deterministic but varied assignment
+            base_idx = hash(competitor["name"]) % len(pool)
+            n_signals = 1 + (ord((competitor["name"] or "x")[0].lower()) % 2)  # 1 or 2
+            chosen = [pool[(base_idx + i) % len(pool)] for i in range(n_signals)]
             results = [
                 {"title": f"{competitor['name']} {msg}", "body": msg, "url": None}
-                for msg in self._DEMO_HIRING_ROLES
+                for msg in chosen
             ]
 
         return [

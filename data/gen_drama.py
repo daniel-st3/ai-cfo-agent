@@ -65,14 +65,14 @@ MIDMARKET = [
 ]
 
 SMB_BASE = [
-    "company_c", "venture_d", "techstart_e", "founders_f", "builders_g",
-    "makers_h", "doers_j", "innovate_k", "scale_l", "grow_m",
-    "build_o", "pivot_p", "iterate_q", "release_t", "test_u",
-    "demo_v", "trial_w", "prod_z", "alpha_y", "beta_x",
-    "creators_i", "stage_aa", "dev_bb", "qa_cc", "ops_dd",
-    "finance_ee", "hr_ff", "sales_gg", "mktg_hh", "eng_ii",
-    "design_jj", "product_kk", "cs_ll", "data_mm", "infra_nn",
-    "sec_oo", "legal_pp", "acctg_qq",
+    "fasttrack_io",  "launchpad_co",  "growthlab_ai",  "pivotdesk_app", "scale8_io",
+    "founders_club", "buildspace_co", "rocketship_ai", "momentum_app",  "iterate_dev",
+    "stackbloom_io", "driftlabs_co",  "clearbit_smb",  "upscale_io",    "traction_ai",
+    "flywheel_dev",  "harbor_labs",   "nextstep_io",   "catalyst_app",  "baseline_co",
+    "prism_data",    "elevate_io",    "runway_labs",    "cohort_ai",     "meridian_dev",
+    "signal_co",     "northstar_app", "archetype_io",  "lattice_smb",   "kindred_labs",
+    "tributary_ai",  "focal_point",   "groundwork_io", "apex_labs_co",  "luminary_dev",
+    "scaffold_ai",   "vantage_io",    "zenith_labs",
 ]
 
 # ---------------------------------------------------------------------------

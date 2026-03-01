@@ -192,7 +192,7 @@ def create_app(
             result = await app.state.graph_runner.run_analyze(
                 file_name="sample_financials.csv",
                 file_bytes=demo_csv.read_bytes(),
-                company_name=company_name or "Acme SaaS Co.",
+                company_name=company_name or "Synapse AI",
                 sector=sector or "saas_productivity",
             )
         except Exception as exc:
@@ -1047,6 +1047,104 @@ def create_app(
             )
 
         return {"role": "assistant", "content": reply}
+
+    # ── Anonymous Industry Benchmarker ────────────────────────────────────────
+
+    @app.get("/benchmarks")
+    async def get_benchmarks(sector: str = "saas_productivity", run_id: str | None = None) -> dict:
+        """Compare this run's KPIs against anonymous industry percentile benchmarks.
+
+        Returns p25/p50/p75 for each metric plus the company's percentile rank.
+        No API key required — data is from public SaaStr / OpenView / a16z reports.
+        """
+        benchmarks_file = _PROJECT_ROOT / "data" / "benchmarks.json"
+        if not benchmarks_file.exists():
+            raise HTTPException(status_code=404, detail="benchmarks.json not found")
+
+        all_benchmarks: dict = _json.loads(benchmarks_file.read_text())
+        sector_key = sector if sector in all_benchmarks else "saas_productivity"
+        benchmarks = all_benchmarks[sector_key]
+
+        your_metrics: dict = {}
+        percentiles: dict = {}
+
+        def _pct(val: float, p25: float, p50: float, p75: float, higher_better: bool) -> float:
+            """Linear interpolation between quartiles → 0-100 percentile score."""
+            if higher_better:
+                if p75 <= p25:
+                    return 50.0
+                if val <= p25:
+                    return max(0.0, (val / max(p25, 0.001)) * 25)
+                if val <= p50:
+                    return 25.0 + ((val - p25) / (p50 - p25)) * 25
+                if val <= p75:
+                    return 50.0 + ((val - p50) / (p75 - p50)) * 25
+                return min(100.0, 75.0 + ((val - p75) / max(p75 - p25, 0.001)) * 25)
+            else:
+                # lower is better — invert scale
+                if p25 <= p75:
+                    return 50.0
+                if val >= p25:
+                    return max(0.0, (p25 / max(val, 0.001)) * 25)
+                if val >= p50:
+                    return 25.0 + ((p25 - val) / max(p25 - p50, 0.001)) * 25
+                if val >= p75:
+                    return 50.0 + ((p50 - val) / max(p50 - p75, 0.001)) * 25
+                return min(100.0, 75.0 + ((p75 - val) / max(p50 - p75, 0.001)) * 25)
+
+        if run_id:
+            try:
+                run_uuid = uuid.UUID(run_id)
+                db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+                async with db_manager.session() as session:
+                    rows = (await session.execute(
+                        select(KPISnapshot)
+                        .where(KPISnapshot.run_id == run_uuid)
+                        .order_by(KPISnapshot.week_start)
+                    )).scalars().all()
+
+                if rows:
+                    latest = rows[-1]
+                    prev   = rows[-5] if len(rows) >= 5 else rows[0]
+
+                    mrr_now  = float(latest.mrr or 0)
+                    mrr_old  = float(prev.mrr or 0)
+                    gm       = float(latest.gross_margin or 0)
+                    ltv      = float(latest.ltv or 0)
+                    cac      = float(latest.cac or 0)
+                    churn    = float(latest.churn_rate or 0)
+                    burn     = float(latest.burn_rate or 0)
+
+                    mrr_growth   = ((mrr_now - mrr_old) / max(mrr_old, 1)) * 100
+                    ltv_cac      = ltv / max(cac, 1)
+                    churn_pct    = churn * 100
+                    net_new_mrr  = max(mrr_now - mrr_old, 0.01)
+                    burn_mult    = min((burn * 4) / max(net_new_mrr * 4, 0.01), 10.0)
+
+                    your_metrics = {
+                        "mrr_growth_mom_pct": round(mrr_growth, 1),
+                        "gross_margin_pct":   round(gm, 1),
+                        "ltv_cac_ratio":      round(ltv_cac, 1),
+                        "weekly_churn_pct":   round(churn_pct, 2),
+                        "burn_multiple":      round(burn_mult, 1),
+                    }
+
+                    for metric, info in benchmarks.items():
+                        if metric in your_metrics:
+                            percentiles[metric] = round(_pct(
+                                your_metrics[metric],
+                                info["p25"], info["p50"], info["p75"],
+                                info["higher_better"],
+                            ), 1)
+            except Exception:
+                pass
+
+        return {
+            "sector":       sector_key,
+            "benchmarks":   benchmarks,
+            "your_metrics": your_metrics,
+            "percentiles":  percentiles,
+        }
 
     return app
 

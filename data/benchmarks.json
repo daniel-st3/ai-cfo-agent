@@ -1,0 +1,66 @@
+{
+  "saas_productivity": {
+    "mrr_growth_mom_pct":  { "p25": 3,   "p50": 8,   "p75": 20,  "higher_better": true,  "label": "MRR Growth MoM", "unit": "%" },
+    "gross_margin_pct":    { "p25": 55,  "p50": 68,  "p75": 78,  "higher_better": true,  "label": "Gross Margin",   "unit": "%" },
+    "ltv_cac_ratio":       { "p25": 1.8, "p50": 3.5, "p75": 7,   "higher_better": true,  "label": "LTV:CAC",        "unit": "x" },
+    "weekly_churn_pct":    { "p25": 1.8, "p50": 0.9, "p75": 0.3, "higher_better": false, "label": "Weekly Churn",   "unit": "%" },
+    "burn_multiple":       { "p25": 3.2, "p50": 1.8, "p75": 0.6, "higher_better": false, "label": "Burn Multiple",  "unit": "x" },
+    "cac_payback_weeks":   { "p25": 60,  "p50": 35,  "p75": 18,  "higher_better": false, "label": "CAC Payback",    "unit": "wks" }
+  },
+  "ai_saas": {
+    "mrr_growth_mom_pct":  { "p25": 5,   "p50": 15,  "p75": 35,  "higher_better": true,  "label": "MRR Growth MoM", "unit": "%" },
+    "gross_margin_pct":    { "p25": 50,  "p50": 65,  "p75": 78,  "higher_better": true,  "label": "Gross Margin",   "unit": "%" },
+    "ltv_cac_ratio":       { "p25": 1.5, "p50": 3,   "p75": 6,   "higher_better": true,  "label": "LTV:CAC",        "unit": "x" },
+    "weekly_churn_pct":    { "p25": 2.5, "p50": 1.2, "p75": 0.4, "higher_better": false, "label": "Weekly Churn",   "unit": "%" },
+    "burn_multiple":       { "p25": 4,   "p50": 2,   "p75": 0.8, "higher_better": false, "label": "Burn Multiple",  "unit": "x" },
+    "cac_payback_weeks":   { "p25": 52,  "p50": 28,  "p75": 14,  "higher_better": false, "label": "CAC Payback",    "unit": "wks" }
+  },
+  "fintech_payments": {
+    "mrr_growth_mom_pct":  { "p25": 2,   "p50": 6,   "p75": 14,  "higher_better": true,  "label": "MRR Growth MoM", "unit": "%" },
+    "gross_margin_pct":    { "p25": 40,  "p50": 55,  "p75": 68,  "higher_better": true,  "label": "Gross Margin",   "unit": "%" },
+    "ltv_cac_ratio":       { "p25": 2,   "p50": 4,   "p75": 8,   "higher_better": true,  "label": "LTV:CAC",        "unit": "x" },
+    "weekly_churn_pct":    { "p25": 1.2, "p50": 0.6, "p75": 0.2, "higher_better": false, "label": "Weekly Churn",   "unit": "%" },
+    "burn_multiple":       { "p25": 2.5, "p50": 1.3, "p75": 0.5, "higher_better": false, "label": "Burn Multiple",  "unit": "x" },
+    "cac_payback_weeks":   { "p25": 45,  "p50": 26,  "p75": 14,  "higher_better": false, "label": "CAC Payback",    "unit": "wks" }
+  },
+  "devtools": {
+    "mrr_growth_mom_pct":  { "p25": 4,   "p50": 10,  "p75": 22,  "higher_better": true,  "label": "MRR Growth MoM", "unit": "%" },
+    "gross_margin_pct":    { "p25": 60,  "p50": 74,  "p75": 85,  "higher_better": true,  "label": "Gross Margin",   "unit": "%" },
+    "ltv_cac_ratio":       { "p25": 2.5, "p50": 5,   "p75": 10,  "higher_better": true,  "label": "LTV:CAC",        "unit": "x" },
+    "weekly_churn_pct":    { "p25": 1.4, "p50": 0.7, "p75": 0.25,"higher_better": false, "label": "Weekly Churn",   "unit": "%" },
+    "burn_multiple":       { "p25": 2.8, "p50": 1.4, "p75": 0.5, "higher_better": false, "label": "Burn Multiple",  "unit": "x" },
+    "cac_payback_weeks":   { "p25": 40,  "p50": 22,  "p75": 12,  "higher_better": false, "label": "CAC Payback",    "unit": "wks" }
+  },
+  "ecommerce": {
+    "mrr_growth_mom_pct":  { "p25": 1.5, "p50": 4,   "p75": 10,  "higher_better": true,  "label": "MRR Growth MoM", "unit": "%" },
+    "gross_margin_pct":    { "p25": 30,  "p50": 45,  "p75": 60,  "higher_better": true,  "label": "Gross Margin",   "unit": "%" },
+    "ltv_cac_ratio":       { "p25": 1.5, "p50": 3,   "p75": 5,   "higher_better": true,  "label": "LTV:CAC",        "unit": "x" },
+    "weekly_churn_pct":    { "p25": 2.5, "p50": 1.3, "p75": 0.5, "higher_better": false, "label": "Weekly Churn",   "unit": "%" },
+    "burn_multiple":       { "p25": 3.5, "p50": 2,   "p75": 0.8, "higher_better": false, "label": "Burn Multiple",  "unit": "x" },
+    "cac_payback_weeks":   { "p25": 52,  "p50": 30,  "p75": 16,  "higher_better": false, "label": "CAC Payback",    "unit": "wks" }
+  },
+  "hr_tech": {
+    "mrr_growth_mom_pct":  { "p25": 2,   "p50": 5,   "p75": 12,  "higher_better": true,  "label": "MRR Growth MoM", "unit": "%" },
+    "gross_margin_pct":    { "p25": 50,  "p50": 65,  "p75": 75,  "higher_better": true,  "label": "Gross Margin",   "unit": "%" },
+    "ltv_cac_ratio":       { "p25": 2,   "p50": 3.5, "p75": 6,   "higher_better": true,  "label": "LTV:CAC",        "unit": "x" },
+    "weekly_churn_pct":    { "p25": 1.5, "p50": 0.8, "p75": 0.3, "higher_better": false, "label": "Weekly Churn",   "unit": "%" },
+    "burn_multiple":       { "p25": 3,   "p50": 1.6, "p75": 0.7, "higher_better": false, "label": "Burn Multiple",  "unit": "x" },
+    "cac_payback_weeks":   { "p25": 55,  "p50": 32,  "p75": 18,  "higher_better": false, "label": "CAC Payback",    "unit": "wks" }
+  },
+  "marketing_automation": {
+    "mrr_growth_mom_pct":  { "p25": 2.5, "p50": 7,   "p75": 16,  "higher_better": true,  "label": "MRR Growth MoM", "unit": "%" },
+    "gross_margin_pct":    { "p25": 55,  "p50": 68,  "p75": 78,  "higher_better": true,  "label": "Gross Margin",   "unit": "%" },
+    "ltv_cac_ratio":       { "p25": 2,   "p50": 4,   "p75": 7,   "higher_better": true,  "label": "LTV:CAC",        "unit": "x" },
+    "weekly_churn_pct":    { "p25": 1.6, "p50": 0.8, "p75": 0.3, "higher_better": false, "label": "Weekly Churn",   "unit": "%" },
+    "burn_multiple":       { "p25": 3,   "p50": 1.5, "p75": 0.6, "higher_better": false, "label": "Burn Multiple",  "unit": "x" },
+    "cac_payback_weeks":   { "p25": 48,  "p50": 28,  "p75": 15,  "higher_better": false, "label": "CAC Payback",    "unit": "wks" }
+  },
+  "general": {
+    "mrr_growth_mom_pct":  { "p25": 2,   "p50": 6,   "p75": 15,  "higher_better": true,  "label": "MRR Growth MoM", "unit": "%" },
+    "gross_margin_pct":    { "p25": 45,  "p50": 60,  "p75": 72,  "higher_better": true,  "label": "Gross Margin",   "unit": "%" },
+    "ltv_cac_ratio":       { "p25": 1.5, "p50": 3,   "p75": 6,   "higher_better": true,  "label": "LTV:CAC",        "unit": "x" },
+    "weekly_churn_pct":    { "p25": 2,   "p50": 1,   "p75": 0.4, "higher_better": false, "label": "Weekly Churn",   "unit": "%" },
+    "burn_multiple":       { "p25": 3.2, "p50": 1.7, "p75": 0.6, "higher_better": false, "label": "Burn Multiple",  "unit": "x" },
+    "cac_payback_weeks":   { "p25": 52,  "p50": 30,  "p75": 16,  "higher_better": false, "label": "CAC Payback",    "unit": "wks" }
+  }
+}

@@ -232,6 +232,24 @@ export interface ChatMessage {
   content: string;
 }
 
+// ── Industry Benchmarker ────────────────────────────────────────────────────
+
+export interface BenchmarkMetric {
+  p25: number;
+  p50: number;
+  p75: number;
+  higher_better: boolean;
+  label: string;
+  unit: string;
+}
+
+export interface BenchmarkResult {
+  sector: string;
+  benchmarks: Record<string, BenchmarkMetric>;
+  your_metrics: Record<string, number>;
+  percentiles: Record<string, number>;
+}
+
 // ── Customer Profitability ──────────────────────────────────────────────────
 
 export interface CustomerProfile {

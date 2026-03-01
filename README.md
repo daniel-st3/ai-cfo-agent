@@ -1,265 +1,191 @@
 # AI CFO Agent
 
-**The AI CFO that 99% of startups can't afford — now open source.**
+> **The AI CFO that 99% of startups can't afford — now open source.**
 
-A real CFO costs $250,000+/year. Most startups fly blind on their own finances until it's too late. This project changes that: a production-grade, multi-agent financial analyst that runs for **less than $0.05/week**, delivers board-quality intelligence, and ships with three capabilities that exist nowhere else in open source.
+Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 seconds — Monte Carlo survival analysis, VC investment memos, pre-mortem scenarios, cap table dilution, industry benchmarking, and more. Powered by Claude Haiku at **~$0.003 per run**.
 
 ---
 
-## What makes this different
+## 21 Features
 
-### ◆ Survival Score — Monte Carlo runway probability
+| Category | Feature |
+|---|---|
+| **KPI Engine** | 7 KPI cards (MRR, ARR, Burn, Gross Margin, Churn, CAC, LTV) + click-to-expand deep-dive charts |
+| **Survival** | Monte Carlo (10K simulations) → ruin probability at 90d / 180d / 365d |
+| **Runway** | Live countdown clock + cut-burn / grow-MRR sliders |
+| **Scenarios** | Bear / Base / Bull stress test with Series A readiness verdict |
+| **AI Reports** | Board Q&A (8 adversarial VC questions), CFO Report, VC Verdict, Investor Update |
+| **CFO Chat** | Multi-turn board prep chat grounded in your live KPI data |
+| **Pre-mortem** | 3 failure scenarios (financial / market / operational) with prevention actions |
+| **Fundraising** | 5-dimension readiness score: MRR growth, GM, LTV:CAC, runway, churn |
+| **Cap Table** | Dilution simulator: pre-money → post-money, share price, founder % |
+| **Compliance** | Autopilot: ASC 606, 1099 risk, round-number transactions, data gaps |
+| **Benchmarker** | Anonymous industry percentile comparison (SaaStr / OpenView / a16z data) |
+| **Fraud Detection** | ML pattern detection: velocity spikes, round numbers, contractor ratio |
+| **Anomaly Detection** | IsolationForest + rules-based, deduplicated & severity-ranked |
+| **Customer Matrix** | Scatter segmentation: Stars / At Risk / Growing / Watch quadrants |
+| **Competitor Intel** | Threat radar + hiring signals + pricing scraping (DuckDuckGo, free) |
+| **Cash Flow Forecast** | 13-week P10/P50/P90 probabilistic forecast |
+| **Deferred Revenue** | GAAP ASC 606 recognition schedule for annual contracts |
+| **Board Deck** | 10-slide PowerPoint generation |
+| **Integrations** | Stripe sync + QuickBooks OAuth |
+| **Multi-file Upload** | Merge multiple CSVs in one analysis run |
+| **Alembic Migrations** | Schema migrations for safe production deployments |
 
-Instead of a single burn rate number that hides all variance, this agent runs **1,000 Monte Carlo simulations** to produce a probability distribution of when your company hits zero cash.
+---
 
+## Quickstart
+
+```bash
+# 1. Clone
+git clone https://github.com/your-org/ai-cfo-agent.git
+cd ai-cfo-agent
+
+# 2. Install backend dependencies
+pip install -e ".[ml]"          # ml group = scikit-learn, chronos (optional)
+
+# 3. Configure — only ANTHROPIC_API_KEY is required
+cp .env.example .env
+
+# 4. Start backend
+uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+# 5. Start frontend (new terminal)
+cd frontend && npm install && npm run dev
 ```
-SURVIVAL SCORE: 67 / 100  ·  MODERATE RISK
 
-  Probability of zero runway:
-    90 days  →  4%
-   180 days  →  14%
-   365 days  →  33%
+Open **http://localhost:3000** and click **Run Demo** — no file upload needed.
 
-  Expected zero cash: day 241
-  ⚡ Start fundraising by: 2026-08-12
+---
+
+## API Keys
+
+| Key | Required | Purpose | Cost |
+|---|---|---|---|
+| `ANTHROPIC_API_KEY` | **Yes** | Claude Haiku for all AI reports | ~$0.001–0.008/run |
+| `TAVILY_API_KEY` | No | Competitor news (DuckDuckGo fallback) | Free tier |
+| `DATABASE_URL` | No | PostgreSQL (SQLite default) | Free |
+| `REDIS_URL` | No | Background tasks | Free |
+| Stripe / QuickBooks | No | Live transaction sync | Free OAuth |
+
+---
+
+## CSV Format
+
+```csv
+date,category,amount,customer_id
+2024-01-07,subscription_revenue,12500.00,acme_corp
+2024-01-07,salary_expense,-18000.00,
+2024-01-07,marketing_expense,-4500.00,
+2024-01-07,cogs,-3200.00,
 ```
 
-No guesswork. No spreadsheets. A single number tells you exactly where you stand.
+**Valid categories**: `subscription_revenue` · `churn_refund` · `salary_expense` · `marketing_expense` · `cogs` · `software_expense` · `office_rent` · `travel_expense` · `contractor_expense` · `tax_payment` · `professional_services`
 
-### ◆ Board Interrogation Mode — adversarial Q&A prep
-
-Before every board meeting, the agent plays the role of a skeptical Sequoia partner and generates **the 8 hardest questions they would ask** — with pre-drafted CFO answers grounded in your actual data.
-
-```json
-{
-  "question": "Your CAC increased 34% MoM while LTV dropped 12%. Explain the unit economics trajectory.",
-  "danger": "RED",
-  "answer": "Marketing spend spiked $8,200 in March due to a channel test that did not convert...",
-  "follow_up": "What is your target CAC payback period and when exactly do you hit it?"
-}
-```
-
-Founders currently pay $50K+/year in advisory fees for this. Now it's one API call.
-
-### ◆ Scenario Stress Test — Bear / Base / Bull in milliseconds
-
-Three financial scenarios computed instantly from your KPI data. Zero API calls. Pure arithmetic.
-
-```
-BEAR   →  91 days runway   ○ NOT_READY    (top customer churns + costs up 15%)
-BASE   → 241 days runway   ◐ 6 MONTHS    (current trajectory continues)
-BULL   → 480 days runway   ● READY        (2.5x growth rate, costs down 15%)
-```
+Download a blank template from the upload page or `GET /analyze/template`.
 
 ---
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    A[CSV / PDF / Auto-ingestion] --> B[POST /analyze or POST /demo]
-    B --> C[LangGraph Router]
-    C --> D[IngestionAgent\nPolars · pdfplumber · Pydantic v2]
-    D --> E{Validation OK?}
-    E -- No --> F[Self-Correction Node\nClaude Haiku 3.5]
-    F --> D
-    E -- Yes --> G[(raw_financials)]
-    G --> H[AnalysisAgent\nKPI Engine · IsolationForest · Chronos-t5-tiny]
-    H --> I[Monte Carlo Survival Score]
-    I --> J[Scenario Stress Test Bear/Base/Bull]
-    J --> K[(kpi_snapshots · anomalies)]
-
-    L[POST /report] --> C
-    C --> M[MarketAgent\nTavily · DuckDuckGo · httpx+BS4]
-    M --> N[(market_signals)]
-    N --> O[InsightWriterAgent\nClaude 3.5 Sonnet]
-    O --> P[(reports)]
-
-    Q[POST /board-prep] --> C
-    C --> R[Board Interrogation\nClaude 3.5 Sonnet · 8 adversarial Q&A]
-
-    P --> S[Slack + Email via n8n]
-    K --> T[Live Dashboard\nStreamlit · Plotly · 30s auto-refresh]
+```
+┌─────────────────────────────────────────────────────────┐
+│  Next.js 15 App Router (port 3000)                       │
+│  ├── / (upload + pipeline animation)                     │
+│  ├── /run/[runId] (full dashboard — 13 sections)         │
+│  └── /integrations/stripe · /integrations/quickbooks    │
+└──────────────────────┬──────────────────────────────────┘
+                       │  REST  (NEXT_PUBLIC_API_URL)
+┌──────────────────────▼──────────────────────────────────┐
+│  FastAPI (port 8000) + LangGraph pipeline                │
+│                                                          │
+│  POST /demo           → sample data, full pipeline       │
+│  POST /analyze        → upload CSV, full pipeline        │
+│  POST /report         → CFO briefing (Claude Haiku)      │
+│  POST /board-prep     → adversarial Q&A (Claude Haiku)   │
+│  POST /vc-memo        → VC investment memo               │
+│  POST /investor-update→ monthly LP update email          │
+│  POST /pre-mortem     → 3 failure scenarios              │
+│  POST /board-prep/chat→ multi-turn CFO chat              │
+│  GET  /benchmarks     → industry percentile comparison   │
+│  GET  /runs/{id}/...  → KPIs · anomalies · signals       │
+│                                                          │
+│  agents/analysis.py      KPI, IsolationForest, Monte Carlo│
+│  agents/insight_writer   Claude Haiku AI reports         │
+│  agents/market_agent     Competitor intel (free APIs)    │
+│  agents/ingestion.py     CSV / PDF parsing               │
+│  agents/stripe_sync      Stripe subscription data        │
+│  agents/quickbooks_sync  QuickBooks P&L data             │
+│                                                          │
+│  SQLite (dev) / PostgreSQL (prod) via Alembic migrations │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Cost breakdown
+## Demo Data
 
-| Component | Before | After | Savings |
-|---|---|---|---|
-| Proxycurl (LinkedIn jobs) | $0.30–$1.00/run | $0 — DuckDuckGo | 100% |
-| Zyte (pricing scraping) | $0.03–$0.10/run | $0 — httpx + BS4 | 100% |
-| GPT-4o-mini normalization | $0.008/run | $0 — Pydantic handles it | 100% |
-| Signal classification (×45 LLM calls) | $0.20–$0.80/run | $0 — rules engine | 100% |
-| Chronos-2-base RAM | 1.3 GB | 120 MB (t5-tiny) | 91% |
-| Docker layer (torch CUDA) | 2.5 GB | 200 MB (CPU-only) | 92% |
-| **Total estimated monthly (4 runs/week)** | **~$50–200** | **~$2–8** | **~95%** |
+78-week synthetic B2B SaaS dataset with a realistic crisis/recovery arc:
 
-The only recurring cost is the Claude 3.5 Sonnet call for executive briefings and board prep (~$0.05 per analysis run).
-
----
-
-## Quick start
-
-```bash
-# 1. Install
-git clone https://github.com/daniel-st3/ai-cfo-agent
-cd ai-cfo-agent
-poetry install
-
-# 2. Configure
-cp .env.example .env
-# Only ANTHROPIC_API_KEY and DATABASE_URL are required to start
-
-# 3. Start the API
-poetry run uvicorn api.main:app --reload
-
-# 4. Run the demo — no file upload, no Stripe account needed
-curl -X POST http://localhost:8000/demo | python -m json.tool
-
-# 5. Get board interrogation Q&A (use run_id from step 4)
-curl -X POST http://localhost:8000/board-prep \
-  -H "Content-Type: application/json" \
-  -d '{"run_id": "<run_id_from_demo>"}'
-
-# 6. Open the live dashboard
-poetry run streamlit run dashboard/streamlit_app.py
-```
-
----
-
-## API endpoints
-
-| Method | Endpoint | Description |
+| Act | Weeks | Story |
 |---|---|---|
-| `POST` | `/demo` | Full pipeline on sample data — no upload needed |
-| `POST` | `/analyze` | Upload CSV or PDF + run full analysis |
-| `POST` | `/report` | Generate board-ready CFO briefing |
-| `POST` | `/board-prep` | Generate adversarial board Q&A deck |
-| `GET` | `/health` | Service + DB health check |
+| 1 | 1–12 | Healthy growth, <0.5% weekly churn |
+| 2 | 13–26 | Crisis: 3 enterprise churns, marketing panic, burn spikes to $45K/wk |
+| 3 | 27–38 | Near-death: new mid-market wins, team right-sizing |
+| 4 | 39–55 | Recovery: 2 enterprise re-signs, MRR climbs back |
+| 5 | 56–78 | Hypergrowth: 3 more enterprise wins, MRR hits $42K/wk |
 
-### `/demo` response shape
-
-```json
-{
-  "run_id": "550e8400-e29b-41d4-a716-446655440000",
-  "kpis": { "mrr": 18450.0, "arr": 221400.0, "burn_rate": 6200.0, ... },
-  "anomalies": [
-    { "metric": "burn_rate", "severity": "HIGH", "source": "isolation_forest", ... }
-  ],
-  "survival_analysis": {
-    "score": 67,
-    "label": "MODERATE_RISK",
-    "probability_ruin_90d": 0.04,
-    "probability_ruin_180d": 0.14,
-    "probability_ruin_365d": 0.33,
-    "expected_zero_cash_day": 241,
-    "fundraising_deadline": "2026-08-12"
-  },
-  "scenario_analysis": [
-    { "scenario": "bear", "months_runway": 5.6, "series_a_readiness": "NOT_READY", ... },
-    { "scenario": "base", "months_runway": 13.2, "series_a_readiness": "6_MONTHS", ... },
-    { "scenario": "bull", "months_runway": 31.8, "series_a_readiness": "READY", ... }
-  ],
-  "status": "complete"
-}
-```
+Regenerate: `python3 data/gen_drama.py`
 
 ---
 
-## Core stack
+## Cost Breakdown
 
-| Layer | Technology |
+| Component | Cost |
 |---|---|
-| **Orchestration** | LangGraph · MessagesState · BoundedMemorySaver |
-| **LLM routing** | LiteLLM → Claude 3.5 Sonnet (briefings) · Claude Haiku 3.5 (corrections) |
-| **Data processing** | Polars lazy evaluation · pdfplumber · pypdf |
-| **Anomaly detection** | scikit-learn IsolationForest · Amazon Chronos-t5-tiny (40MB) |
-| **Survival analysis** | NumPy Monte Carlo (1,000 simulations, no external API) |
-| **Market intelligence** | Tavily API · DuckDuckGo (free fallback) · httpx + BeautifulSoup |
-| **Storage** | PostgreSQL · SQLAlchemy 2.0 async · asyncpg |
-| **API** | FastAPI async · multipart file upload · lifespan pool management |
-| **Background tasks** | Celery + Redis |
-| **Dashboard** | Streamlit · Plotly · 30s auto-refresh |
-| **Deploy** | Render.com (CPU-only torch → 2.3GB lighter build) |
+| Claude Haiku (all AI reports per run) | ~$0.003–0.025 |
+| Competitor news (DuckDuckGo) | $0 |
+| Hiring signals (DuckDuckGo) | $0 |
+| Pricing scrape (httpx + BeautifulSoup) | $0 |
+| Anomaly detection (IsolationForest) | $0 |
+| Monte Carlo survival (NumPy) | $0 |
+| **Total per run** | **~$0.003–0.025** |
 
 ---
 
-## Database schema
-
-Six PostgreSQL tables: `raw_financials`, `kpi_snapshots`, `anomalies`, `market_signals`, `reports`, `metrics_log`.
-
-Connect Looker Studio directly to these tables for live board-level dashboards. See `dashboard/looker_config.md` for setup instructions.
-
----
-
-## LangGraph workflow paths
-
-```
-Analyze:    router → ingestion → (correction ×2)? → persist_raw → analysis → END
-Report:     router → market → insight → END
-Board Prep: router → board_prep → END
-```
-
-The correction loop triggers only when Pydantic validation fails on ingested data — the LLM rewrites the malformed rows and retries (max 2 attempts before failing gracefully).
-
----
-
-## Deployment on Render
-
-`render.yaml` provisions three services:
-
-1. **ai-cfo-agent-api** — FastAPI web service
-2. **ai-cfo-agent-worker** — Celery background worker
-3. **ai-cfo-dashboard** — Streamlit live dashboard
-
-The build command installs CPU-only PyTorch first (`--index-url https://download.pytorch.org/whl/cpu`), reducing the Docker layer by **2.3 GB** compared to the default CUDA wheel.
-
-Required environment variables: `DATABASE_URL`, `ANTHROPIC_API_KEY`.
-Optional: `TAVILY_API_KEY` (falls back to DuckDuckGo automatically), `REDIS_URL`, `N8N_WEBHOOK_BASE_URL`.
-
----
-
-## Configuration
+## Production Deployment
 
 ```bash
-# Required
-DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/ai_cfo
-ANTHROPIC_API_KEY=sk-ant-...
+# Run database migrations
+alembic upgrade head
 
-# Optional — system works without these (free fallbacks activate automatically)
-TAVILY_API_KEY=tvly-...           # DuckDuckGo used if not set
-REDIS_URL=redis://localhost:6379  # For Celery background tasks
-LOOKER_STUDIO_URL=https://...
-N8N_WEBHOOK_BASE_URL=https://...
+# Set environment variables
+export DATABASE_URL=postgresql+asyncpg://user:pass@host/ai_cfo
+export ANTHROPIC_API_KEY=sk-ant-...
 
-# Feature flags
-DISABLE_CHRONOS=1   # Skip Chronos inference, keep IsolationForest anomaly detection
+# Start API (2 workers)
+gunicorn api.main:app -k uvicorn.workers.UvicornWorker -w 2 --bind 0.0.0.0:8000
+
+# Build frontend
+cd frontend && npm run build && npm start
 ```
 
 ---
 
-## Testing
+## Project Layout
 
-```bash
-# Run all tests
-poetry run pytest -q
-
-# Or just the analysis tests (no DB required)
-poetry run pytest tests/test_analysis.py -v
+```
+agents/          KPI engine, insight writer, market agent, ingestion
+api/             FastAPI app, models, schemas, DB manager
+graph/           LangGraph orchestration
+frontend/        Next.js 15 App Router dashboard
+data/            Demo CSV + competitor profiles + industry benchmarks
+alembic/         Database migration scripts
+scripts/         Playwright visual check, utilities
 ```
 
 ---
 
-## Repository layout
+## License
 
-```
-agents/         Ingestion, Analysis, Market, InsightWriter agents
-api/            FastAPI app, async DB manager, ORM models, Pydantic schemas
-graph/          LangGraph state machine and conditional routing
-dashboard/      Streamlit live dashboard (Apple-style, auto-refresh)
-n8n/            Ready-to-import Slack + email automation workflows
-data/           Sample financial data (50-row CSV with intentional anomalies)
-tests/          pytest coverage for ingestion, analysis, and API contracts
-```
+MIT — fork it, deploy it, build products on top of it. Star the repo if it saves you time. ⭐

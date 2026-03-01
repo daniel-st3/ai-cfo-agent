@@ -1,5 +1,6 @@
 import type {
   AnalyzeResponse,
+  BenchmarkResult,
   BoardDeckStatus,
   CashFlowSectionData,
   CustomerProfile,
@@ -312,6 +313,16 @@ export async function getPreMortem(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ run_id: runId, months_runway: monthsRunway, company_name: companyName, sector }),
   });
+}
+
+// ── Industry Benchmarker ────────────────────────────────────────────────────
+
+/** Compare this run's KPIs against anonymous industry percentile benchmarks */
+export async function getBenchmarks(
+  runId: string,
+  sector: string,
+): Promise<BenchmarkResult> {
+  return apiFetch(`/benchmarks?run_id=${runId}&sector=${encodeURIComponent(sector)}`);
 }
 
 // ── Multi-turn Board Q&A Chat ──────────────────────────────────────────────

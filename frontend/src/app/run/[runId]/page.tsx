@@ -6,7 +6,7 @@ import {
   ArrowLeft, Sparkles, Zap, FileText, Loader2,
   TrendingUp, TrendingDown, Minus, Scale, Mail, Plug,
   Skull, Target, Send, MessageCircle, Calculator,
-  ShieldCheck, CheckCircle2, XCircle, AlertTriangle,
+  ShieldCheck, CheckCircle2, XCircle, AlertTriangle, BarChart3,
 } from "lucide-react";
 import { RevenueAreaChart }              from "@/components/charts/revenue-area";
 import { SurvivalRadialChart }           from "@/components/charts/survival-radial";
@@ -30,17 +30,18 @@ import { BoardDeckDownload }             from "@/components/board-deck-download"
 import { KPIDeepDive }                  from "@/components/kpi-deep-dive";
 import { FraudAlertPanel }              from "@/components/fraud-alert-panel";
 import { CustomerMatrix }               from "@/components/customer-matrix";
+import { IndustryBenchmarker }          from "@/components/industry-benchmarker";
 import {
   getKPISeries, getAnomalies, getSignals,
   getBoardPrep, getReport, getVCMemo, getInvestorUpdate,
   getFraudAlerts, getCustomerProfiles,
-  getPreMortem, sendBoardChatMessage,
+  getPreMortem, sendBoardChatMessage, getBenchmarks,
 } from "@/lib/api";
 import { fmtK, fmtPct } from "@/lib/utils";
 import type {
   AnalyzeResponse, KPISnapshot, Anomaly, MarketSignal,
   SurvivalAnalysis, ScenarioResult, BoardQuestion, ReportData, VCMemoData, InvestorUpdateData,
-  FraudAlert, CustomerProfile, PreMortemScenario, ChatMessage,
+  FraudAlert, CustomerProfile, PreMortemScenario, ChatMessage, BenchmarkResult,
 } from "@/lib/types";
 
 function SectionHeading({ label, sub }: { label: string; sub?: string }) {
@@ -127,6 +128,10 @@ export default function RunPage() {
   const [capShares,        setCapShares]        = useState(10_000_000);
   const [capFounderPct,    setCapFounderPct]    = useState(60);
   const [capEmployeePct,   setCapEmployeePct]   = useState(15);
+
+  /* ── Industry benchmarker state ───────────────────────────────── */
+  const [benchmarks,       setBenchmarks]       = useState<BenchmarkResult | null>(null);
+  const [benchmarksLoading, setBenchmarksLoading] = useState(false);
 
   /* ── UI loading state ─────────────────────────────────────────── */
   const [loading,               setLoading]               = useState(true);
@@ -241,6 +246,16 @@ export default function RunPage() {
       setInvestorUpdate(await getInvestorUpdate(runId, baseMonths, survival.score, companyName, sector));
     } catch {}
     finally { setInvestorUpdateLoading(false); }
+  };
+
+  const handleBenchmarks = async () => {
+    if (!runId) return;
+    setBenchmarksLoading(true);
+    try {
+      const result = await getBenchmarks(runId as string, sector);
+      setBenchmarks(result);
+    } catch { /* keep null */ }
+    finally { setBenchmarksLoading(false); }
   };
 
   const handlePreMortem = async () => {
@@ -695,6 +710,16 @@ export default function RunPage() {
                       generated: false,
                       loading: false,
                     },
+                    {
+                      id: "benchmarker",
+                      icon: <BarChart3 className="h-4 w-4" />,
+                      title: "Benchmarker",
+                      sub: "Industry percentiles",
+                      color: "text-violet-600",
+                      bg: "bg-violet-50",
+                      generated: !!benchmarks,
+                      loading: benchmarksLoading,
+                    },
                   ].map(tool => (
                     <button
                       key={tool.id}
@@ -1132,6 +1157,42 @@ export default function RunPage() {
                           </div>
                         );
                       })()}
+                    </div>
+                  )}
+
+                  {/* ── Benchmarker panel ─────────────────────────────── */}
+                  {activeAITool === "benchmarker" && (
+                    <div className="p-6 overflow-y-auto">
+                      <div className="flex items-center justify-between mb-5">
+                        <div>
+                          <h3 className="text-base font-bold text-gray-900">Industry Benchmarker</h3>
+                          <p className="text-xs text-gray-400 mt-0.5">How you rank vs anonymous B2B SaaS peers</p>
+                        </div>
+                        {!benchmarks && (
+                          <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-3 py-1">Free · No API key</span>
+                        )}
+                      </div>
+
+                      {benchmarks ? (
+                        <IndustryBenchmarker data={benchmarks} />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+                          <div className="h-12 w-12 rounded-2xl bg-violet-50 flex items-center justify-center">
+                            <BarChart3 className="h-6 w-6 text-violet-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700">See how you stack up</p>
+                            <p className="text-xs text-gray-400 mt-1 max-w-xs">
+                              Compares your MRR growth, gross margin, LTV:CAC, churn, and burn efficiency against industry quartiles.
+                            </p>
+                          </div>
+                          <button onClick={handleBenchmarks} disabled={benchmarksLoading}
+                            className="flex items-center gap-2 rounded-xl bg-violet-600 text-white px-5 py-2.5 text-sm font-semibold hover:bg-violet-500 disabled:opacity-40 transition-colors shadow-sm shadow-violet-200">
+                            {benchmarksLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
+                            {benchmarksLoading ? "Comparing…" : "Run Benchmark"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 

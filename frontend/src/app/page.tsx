@@ -222,7 +222,7 @@ export default function HomePage() {
     isDemo: boolean,
     source: "csv" | "stripe" | "quickbooks" = "csv",
   ) => {
-    const cn = companyNameRef.current || "Acme SaaS Co.";
+    const cn = companyNameRef.current || "Synapse AI";
     const sc = sectorRef.current;
     const ff = filesRef.current;
 
