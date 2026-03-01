@@ -263,3 +263,23 @@ export interface CustomerProfile {
   segment: "Enterprise" | "Mid" | "SMB";
   revenue_pct: number;
 }
+
+// ── Morning CFO Briefing ────────────────────────────────────────────────────
+
+export interface MorningBriefingData {
+  company_name: string;
+  runway_months: number;
+  burn_rate: number;
+  prev_burn: number;
+  mrr: number;
+  prev_mrr: number;
+  burn_change_pct: number;
+  mrr_change_pct: number;
+  gross_margin_pct: number;
+  churn_pct: number;
+  ltv_cac: number;
+  urgent: string[];
+  good_news: string[];
+  actions: string[];
+  week_start: string;
+}

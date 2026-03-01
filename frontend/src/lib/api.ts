@@ -7,6 +7,7 @@ import type {
   DeferredRevenueSummary,
   FraudAlert,
   IntegrationStatus,
+  MorningBriefingData,
   PipelineStatus,
   BoardPrepResponse,
   ReportData,
@@ -323,6 +324,20 @@ export async function getBenchmarks(
   sector: string,
 ): Promise<BenchmarkResult> {
   return apiFetch(`/benchmarks?run_id=${runId}&sector=${encodeURIComponent(sector)}`);
+}
+
+// ── Morning CFO Briefing ───────────────────────────────────────────────────
+
+/** Generate a proactive morning CFO briefing for a run (~$0.003, Claude Haiku) */
+export async function getMorningBriefing(
+  runId: string,
+  companyName: string,
+): Promise<MorningBriefingData> {
+  return apiFetch("/briefing/preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ run_id: runId, company_name: companyName }),
+  });
 }
 
 // ── Multi-turn Board Q&A Chat ──────────────────────────────────────────────

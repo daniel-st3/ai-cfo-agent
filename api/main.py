@@ -61,6 +61,7 @@ from agents.board_deck_generator import BoardDeckGenerator
 from agents.cash_flow_forecaster import CashFlowForecaster
 from agents.deferred_revenue import DeferredRevenueCalculator
 from agents.insight_writer import generate_investor_update, generate_vc_memo, generate_pre_mortem, generate_board_chat
+from agents.morning_briefing import generate_morning_briefing
 from agents.quickbooks_sync import QuickBooksIngestionAgent
 from agents.stripe_sync import StripeIngestionAgent
 from graph.cfo_graph import CFOGraphRunner, build_graph_runner
@@ -1145,6 +1146,26 @@ def create_app(
             "your_metrics": your_metrics,
             "percentiles":  percentiles,
         }
+
+    # ── Morning CFO Briefing ─────────────────────────────────────────────
+    @app.post("/briefing/preview")
+    async def briefing_preview(request: dict[str, Any]) -> dict[str, Any]:
+        """
+        Generate a proactive morning CFO briefing for a run.
+        Returns structured data: urgent alerts, good news, action items, KPI deltas.
+        ~$0.003 per call (Claude Haiku).
+        """
+        run_id_str   = request.get("run_id", "")
+        company_name = str(request.get("company_name", "Your Company"))
+        try:
+            run_id = uuid.UUID(str(run_id_str))
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Invalid run_id")
+
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            briefing = await generate_morning_briefing(run_id, session, company_name)
+        return briefing
 
     return app
 

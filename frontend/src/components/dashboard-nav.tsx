@@ -51,7 +51,7 @@ export function DashboardNav({
     const ids = [
       "sec-kpi", "sec-runway", "sec-forecast", "sec-revenue",
       "sec-intel", "sec-scenarios", "sec-deepdive", "sec-customers",
-      "sec-fraud", "sec-anomalies", "sec-fundraising", "sec-ai",
+      "sec-fraud", "sec-anomalies", "sec-fundraising", "sec-briefing", "sec-ai",
     ];
 
     observer.current?.disconnect();
@@ -203,6 +203,17 @@ export function DashboardNav({
       border: "border-green-200",
       ring: "ring-green-400",
       text: "text-green-700",
+    },
+    {
+      id: "sec-briefing",
+      label: "Briefing",
+      icon: "🌅",
+      getValue: () => "7 AM",
+      getSub: () => "morning CFO",
+      gradient: "from-amber-50 to-orange-100",
+      border: "border-amber-200",
+      ring: "ring-amber-400",
+      text: "text-amber-700",
     },
     {
       id: "sec-ai",

@@ -32,17 +32,18 @@ import { KPIDeepDive }                  from "@/components/kpi-deep-dive";
 import { FraudAlertPanel }              from "@/components/fraud-alert-panel";
 import { CustomerMatrix }               from "@/components/customer-matrix";
 import { IndustryBenchmarker }          from "@/components/industry-benchmarker";
+import { MorningBriefing }             from "@/components/morning-briefing";
 import {
   getKPISeries, getAnomalies, getSignals,
   getBoardPrep, getReport, getVCMemo, getInvestorUpdate,
   getFraudAlerts, getCustomerProfiles,
-  getPreMortem, sendBoardChatMessage, getBenchmarks,
+  getPreMortem, sendBoardChatMessage, getBenchmarks, getMorningBriefing,
 } from "@/lib/api";
 import { fmtK, fmtPct } from "@/lib/utils";
 import type {
   AnalyzeResponse, KPISnapshot, Anomaly, MarketSignal,
   SurvivalAnalysis, ScenarioResult, BoardQuestion, ReportData, VCMemoData, InvestorUpdateData,
-  FraudAlert, CustomerProfile, PreMortemScenario, ChatMessage, BenchmarkResult,
+  FraudAlert, CustomerProfile, PreMortemScenario, ChatMessage, BenchmarkResult, MorningBriefingData,
 } from "@/lib/types";
 
 function SectionHeading({ label, sub }: { label: string; sub?: string }) {
@@ -133,6 +134,10 @@ export default function RunPage() {
   /* ── Industry benchmarker state ───────────────────────────────── */
   const [benchmarks,       setBenchmarks]       = useState<BenchmarkResult | null>(null);
   const [benchmarksLoading, setBenchmarksLoading] = useState(false);
+
+  /* ── Morning briefing state ────────────────────────────────────── */
+  const [briefing,         setBriefing]         = useState<MorningBriefingData | null>(null);
+  const [briefingLoading,  setBriefingLoading]  = useState(false);
 
   /* ── UI loading state ─────────────────────────────────────────── */
   const [loading,               setLoading]               = useState(true);
@@ -257,6 +262,14 @@ export default function RunPage() {
       setBenchmarks(result);
     } catch { /* keep null */ }
     finally { setBenchmarksLoading(false); }
+  };
+
+  const handleBriefing = async () => {
+    setBriefingLoading(true);
+    try {
+      setBriefing(await getMorningBriefing(runId as string, companyName || "Your Company"));
+    } catch { /* keep null */ }
+    finally { setBriefingLoading(false); }
   };
 
   const handlePreMortem = async () => {
@@ -622,7 +635,22 @@ export default function RunPage() {
           </section>
         )}
 
-        {/* 13 · AI INTELLIGENCE CENTER ─────────────────────────────── */}
+        {/* 13 · MORNING CFO BRIEFING ──────────────────────────────── */}
+        {!loading && (
+          <section id="sec-briefing" className="section-enter">
+            <SectionHeading label="Morning CFO Briefing"
+              sub="Proactive AI · daily financial summary · urgent alerts + action items · ~$0.003" />
+            <MorningBriefing
+              runId={runId as string}
+              companyName={companyName || "Your Company"}
+              onGenerate={handleBriefing}
+              data={briefing}
+              loading={briefingLoading}
+            />
+          </section>
+        )}
+
+        {/* 14 · AI INTELLIGENCE CENTER ─────────────────────────────── */}
         {!loading && (
           <section id="sec-ai" className="section-enter">
             <SectionHeading label="AI Intelligence Center"
