@@ -5,13 +5,13 @@
 
 > **The AI CFO that 99% of startups can't afford — now open source.**
 
-Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 seconds — Monte Carlo survival analysis, VC investment memos, pre-mortem scenarios, cap table dilution, industry benchmarking, and more. Powered by Claude Haiku at **~$0.003 per run**.
+Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 seconds — Monte Carlo survival analysis, VC investment memos, pre-mortem scenarios, cap table dilution, industry benchmarking, and an autonomous agent that monitors your finances 24/7. Powered by Claude Haiku at **~$0.003 per run**.
 
 ---
 
 ## Screenshots
 
-| Dashboard (13 sections) | Morning Briefing |
+| Dashboard (14 sections) | Morning Briefing |
 |---|---|
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Morning Briefing](docs/screenshots/morning_briefing.png) |
 
@@ -21,13 +21,13 @@ Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 
 
 ---
 
-## 22 Features
+## 23 Features
 
 | Category | Feature |
 |---|---|
 | **KPI Engine** | 7 KPI cards (MRR, ARR, Burn, Gross Margin, Churn, CAC, LTV) + click-to-expand deep-dive charts |
 | **Survival** | Monte Carlo (10K simulations) → ruin probability at 90d / 180d / 365d |
-| **Runway** | Interactive arc gauge + cut-burn / grow-MRR sliders with per-lever impact chips |
+| **Runway** | Horizontal fuel-gauge bar + cut-burn / grow-MRR sliders with per-lever impact chips |
 | **Morning Briefing** | 7 AM proactive text: runway, urgent alerts, 3 AI actions + iMessage preview in dashboard |
 | **Scenarios** | Bear / Base / Bull stress test with Series A readiness verdict |
 | **AI Reports** | Board Q&A (8 adversarial VC questions), CFO Report, VC Verdict, Investor Update |
@@ -47,6 +47,7 @@ Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 
 | **Integrations** | Stripe sync + QuickBooks OAuth |
 | **Multi-file Upload** | Merge multiple CSVs in one analysis run |
 | **Alembic Migrations** | Schema migrations for safe production deployments |
+| **Autonomous Agent** | 5-component agent loop: perceive → reason (Claude tool_use) → plan → execute → learn |
 
 ---
 
@@ -65,10 +66,13 @@ cp .env.example .env
 # Open .env and set: ANTHROPIC_API_KEY=sk-ant-your-key-here
 # All other keys are optional (see API Keys section below)
 
-# 4. Start backend
+# 4. Run database migrations
+alembic upgrade head
+
+# 5. Start backend
 uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 
-# 5. Start frontend (new terminal)
+# 6. Start frontend (new terminal)
 cd frontend && npm install && npm run dev
 ```
 
@@ -80,10 +84,11 @@ Open **http://localhost:3000** and click **Run Demo** — no file upload needed.
 
 | Key | Required | Purpose | Cost |
 |---|---|---|---|
-| `ANTHROPIC_API_KEY` | **Yes** | Claude Haiku for all AI reports | ~$0.001–0.008/run |
+| `ANTHROPIC_API_KEY` | **Yes** | Claude Haiku for all AI reports + agent reasoning | ~$0.001–0.008/run |
 | `TAVILY_API_KEY` | No | Competitor news (DuckDuckGo fallback) | Free tier |
 | `DATABASE_URL` | No | PostgreSQL (SQLite default) | Free |
-| `REDIS_URL` | No | Background tasks | Free |
+| `REDIS_URL` | No | Background tasks (Celery) | Free |
+| `SLACK_WEBHOOK_URL` | No | Agent Slack notifications | Free |
 | Stripe / QuickBooks | No | Live transaction sync | Free OAuth |
 
 ---
@@ -110,35 +115,51 @@ Download a blank template from the upload page or `GET /analyze/template`.
 ┌─────────────────────────────────────────────────────────┐
 │  Next.js 15 App Router (port 3000)                       │
 │  ├── / (upload + pipeline animation)                     │
-│  ├── /run/[runId] (full dashboard — 13 sections)         │
+│  ├── /run/[runId] (full dashboard — 14 sections)         │
 │  └── /integrations/stripe · /integrations/quickbooks    │
 └──────────────────────┬──────────────────────────────────┘
                        │  REST  (NEXT_PUBLIC_API_URL)
 ┌──────────────────────▼──────────────────────────────────┐
 │  FastAPI (port 8000) + LangGraph pipeline                │
 │                                                          │
-│  POST /demo           → sample data, full pipeline       │
-│  POST /analyze        → upload CSV, full pipeline        │
-│  POST /report         → CFO briefing (Claude Haiku)      │
-│  POST /board-prep     → adversarial Q&A (Claude Haiku)   │
-│  POST /vc-memo        → VC investment memo               │
-│  POST /investor-update→ monthly LP update email          │
-│  POST /pre-mortem     → 3 failure scenarios              │
-│  POST /board-prep/chat→ multi-turn CFO chat              │
-│  POST /briefing/preview→ morning CFO briefing preview    │
-│  GET  /benchmarks     → industry percentile comparison   │
-│  GET  /runs/{id}/...  → KPIs · anomalies · signals       │
+│  POST /demo             → sample data, full pipeline     │
+│  POST /analyze          → upload CSV, full pipeline      │
+│  POST /report           → CFO briefing (Claude Haiku)    │
+│  POST /board-prep       → adversarial Q&A (Claude Haiku) │
+│  POST /vc-memo          → VC investment memo             │
+│  POST /investor-update  → monthly LP update email        │
+│  POST /pre-mortem       → 3 failure scenarios            │
+│  POST /board-prep/chat  → multi-turn CFO chat            │
+│  POST /briefing/preview → morning CFO briefing preview   │
+│  POST /agent/{id}/cycle → trigger autonomous agent cycle │
+│  GET  /agent/{id}/status → observation + action feed     │
+│  POST /agent/actions/{id}/approve → approve action       │
+│  GET  /benchmarks       → industry percentile comparison │
+│  GET  /runs/{id}/...    → KPIs · anomalies · signals     │
 │                                                          │
-│  agents/analysis.py      KPI, IsolationForest, Monte Carlo│
-│  agents/insight_writer   Claude Haiku AI reports         │
-│  agents/market_agent     Competitor intel (free APIs)    │
-│  agents/ingestion.py     CSV / PDF parsing               │
-│  agents/morning_briefing Proactive daily CFO briefing    │
-│  agents/stripe_sync      Stripe subscription data        │
-│  agents/quickbooks_sync  QuickBooks P&L data             │
+│  agents/analysis.py        KPI, IsolationForest, Monte Carlo│
+│  agents/insight_writer     Claude Haiku AI reports       │
+│  agents/market_agent       Competitor intel (free APIs)  │
+│  agents/ingestion.py       CSV / PDF parsing             │
+│  agents/morning_briefing   Proactive daily CFO briefing  │
+│  agents/stripe_sync        Stripe subscription data      │
+│  agents/quickbooks_sync    QuickBooks P&L data           │
+│  agents/autonomous_cfo.py  Autonomous agent orchestrator │
+│  agents/perception.py      Financial state observer      │
+│  agents/reasoning.py       Claude tool_use decision maker│
+│  agents/planning.py        Multi-step action planner     │
+│  agents/executor.py        Action runner (Slack/email)   │
+│  agents/agent_memory.py    PostgreSQL outcome memory     │
 │                                                          │
 │  SQLite (dev) / PostgreSQL (prod) via Alembic migrations │
 └─────────────────────────────────────────────────────────┘
+
+Autonomous Agent Loop (runs on-demand or via Celery Beat):
+  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+  │ Perceive │ → │  Reason  │ → │   Plan   │ → │ Execute  │ → │  Learn   │
+  │ KPI + DB │   │ Claude   │   │ template │   │ Slack /  │   │ Postgres │
+  │ snapshot │   │ tool_use │   │ actions  │   │ approval │   │ outcomes │
+  └──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
 ```
 
 ---
@@ -165,6 +186,7 @@ Regenerate: `python3 data/gen_drama.py`
 |---|---|
 | Claude Haiku (all AI reports per run) | ~$0.003–0.025 |
 | Morning briefing (Claude Haiku) | ~$0.003/day per user |
+| **Autonomous agent cycle (Claude Haiku)** | **~$0.003/cycle** |
 | SMS delivery (Twilio) | ~$0.01/message ([free trial](https://www.twilio.com/try-twilio)) |
 | Email delivery (SendGrid) | $0 ([free tier](https://sendgrid.com/pricing/): 100 emails/day) |
 | Competitor news (DuckDuckGo) | $0 |
@@ -173,7 +195,7 @@ Regenerate: `python3 data/gen_drama.py`
 | Anomaly detection (IsolationForest) | $0 |
 | Monte Carlo survival (NumPy) | $0 |
 | **Total per run** | **~$0.003–0.025** |
-| **Daily briefing** | **~$0.013–0.033/user/day** |
+| **Daily briefing + hourly agent** | **~$0.085–0.10/user/day** |
 
 ---
 
@@ -186,12 +208,16 @@ alembic upgrade head
 # Set environment variables
 export DATABASE_URL=postgresql+asyncpg://user:pass@host/ai_cfo
 export ANTHROPIC_API_KEY=sk-ant-...
+export SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...  # optional
 
 # Start API (2 workers)
 gunicorn api.main:app -k uvicorn.workers.UvicornWorker -w 2 --bind 0.0.0.0:8000
 
 # Build frontend
 cd frontend && npm run build && npm start
+
+# Optional: hourly autonomous agent via cron
+# 0 * * * * curl -X POST https://your-api.com/agent/{run_id}/cycle
 ```
 
 ---
@@ -199,7 +225,7 @@ cd frontend && npm run build && npm start
 ## Project Layout
 
 ```
-agents/          KPI engine, insight writer, market agent, ingestion
+agents/          KPI engine, insight writer, market agent, ingestion, autonomous agent
 api/             FastAPI app, models, schemas, DB manager
 graph/           LangGraph orchestration
 frontend/        Next.js 15 App Router dashboard
