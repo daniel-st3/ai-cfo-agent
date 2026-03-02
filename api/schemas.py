@@ -13,6 +13,23 @@ SeverityType = Literal["LOW", "MEDIUM", "HIGH"]
 AnomalySource = Literal["isolation_forest", "chronos2"]
 
 
+class HealthScoreComponents(BaseModel):
+    runway: int
+    burn_stability: int
+    revenue_growth: int
+    unit_economics: int
+    risk_factors: int
+
+
+class HealthScoreResponse(BaseModel):
+    score: int
+    status: Literal["healthy", "warning", "critical"]
+    reasoning: str
+    components: HealthScoreComponents
+    cached: bool
+    timestamp: str
+
+
 class RawFinancialRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

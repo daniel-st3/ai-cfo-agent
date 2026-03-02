@@ -52,6 +52,7 @@ from api.schemas import (
     InvestorUpdateResponse,
     OAuthAuthorizeResponse,
     ReportRequest,
+    HealthScoreResponse,
     ReportResponse,
     SyncResponse,
     VCMemoRequest,
@@ -365,6 +366,21 @@ def create_app(
             }
             for r in rows
         ]
+
+    @app.get("/runs/{run_id}/health-score", response_model=HealthScoreResponse)
+    async def health_score_endpoint(run_id: uuid.UUID, refresh: bool = False):
+        """Return financial health score (0-100) with live Claude reasoning.
+
+        Cached for 2 minutes. Pass ?refresh=true to bypass cache and call Claude again.
+        """
+        from agents.health_score import calculate_health_score
+        db_manager = app.state.db_manager if hasattr(app.state, "db_manager") else get_db_manager()
+        async with db_manager.session() as session:
+            result = await calculate_health_score(run_id, session, force_refresh=refresh)
+        if result is None:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="No KPI data found for this run")
+        return result
 
     @app.get("/runs/{run_id}/anomalies")
     async def run_anomalies(run_id: uuid.UUID) -> list[dict]:

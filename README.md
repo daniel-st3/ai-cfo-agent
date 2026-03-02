@@ -5,7 +5,7 @@
 
 > **The AI CFO that 99% of startups can't afford — now open source.**
 
-Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 seconds — Monte Carlo survival analysis, VC investment memos, pre-mortem scenarios, cap table dilution, industry benchmarking, and an autonomous agent that monitors your finances 24/7. Powered by Claude Haiku at **~$0.003 per run**.
+Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 seconds — a real-time **Financial Health Score (0-100)** with live Claude reasoning, Monte Carlo survival analysis, VC investment memos, pre-mortem scenarios, cap table dilution, industry benchmarking, and an autonomous agent that monitors your finances 24/7. Powered by Claude Haiku at **~$0.003 per run**.
 
 ---
 
@@ -25,10 +25,11 @@ Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 
 
 ---
 
-## 23 Features
+## 24 Features
 
 | Category | Feature |
 |---|---|
+| **Health Score** | Real-time 0-100 composite score (runway + burn + growth + unit econ + risk) with live Claude Haiku reasoning — cached 2 min, refreshable |
 | **KPI Engine** | 7 KPI cards (MRR, ARR, Burn, Gross Margin, Churn, CAC, LTV) + click-to-expand deep-dive charts |
 | **Survival** | Monte Carlo (10K simulations) → ruin probability at 90d / 180d / 365d |
 | **Runway** | Horizontal fuel-gauge bar + cut-burn / grow-MRR sliders with per-lever impact chips |

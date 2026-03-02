@@ -330,3 +330,18 @@ export interface AgentCycleResult {
   error: string;
   completed_at: string;
 }
+
+export interface HealthScoreData {
+  score: number;
+  status: "healthy" | "warning" | "critical";
+  reasoning: string;
+  components: {
+    runway: number;
+    burn_stability: number;
+    revenue_growth: number;
+    unit_economics: number;
+    risk_factors: number;
+  };
+  cached: boolean;
+  timestamp: string;
+}

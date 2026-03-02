@@ -34,6 +34,7 @@ import { CustomerMatrix }               from "@/components/customer-matrix";
 import { IndustryBenchmarker }          from "@/components/industry-benchmarker";
 import { MorningBriefing }             from "@/components/morning-briefing";
 import { AutonomousAgentSection }       from "@/components/autonomous-agent-section";
+import { HealthScoreCard }              from "@/components/health-score-card";
 import {
   getKPISeries, getAnomalies, getSignals,
   getBoardPrep, getReport, getVCMemo, getInvestorUpdate,
@@ -441,6 +442,13 @@ export default function RunPage() {
 
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-600">{error}</div>
+        )}
+
+        {/* 0 · FINANCIAL HEALTH SCORE ─────────────────────────────── */}
+        {!loading && (
+          <section id="sec-health" className="section-enter">
+            <HealthScoreCard runId={runId as string} />
+          </section>
         )}
 
         {/* 1 · KPI COMMAND CENTER ─────────────────────────────────── */}

@@ -44,7 +44,7 @@ I built AI CFO Agent because 55% of founders lose sleep over cash flow, but can'
 
 An autonomous AI agent that runs entirely on YOUR machine:
 
-✅ **23 automated features** including Monte Carlo survival, fraud detection, runway forecasting, VC memos, morning briefings, and pre-mortem scenarios
+✅ **24 automated features** including a real-time Financial Health Score (0-100) with live Claude reasoning, Monte Carlo survival, fraud detection, runway forecasting, VC memos, morning briefings, and pre-mortem scenarios
 
 ✅ **Autonomous monitoring** with perceive → reason → plan → execute → learn loop. The agent is now prominently displayed at the TOP of the dashboard (section 2) so you see it immediately.
 

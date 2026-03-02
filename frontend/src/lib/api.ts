@@ -8,6 +8,7 @@ import type {
   CustomerProfile,
   DeferredRevenueSummary,
   FraudAlert,
+  HealthScoreData,
   IntegrationStatus,
   MorningBriefingData,
   PipelineStatus,
@@ -396,4 +397,15 @@ export async function rejectAgentAction(
   actionId: string,
 ): Promise<{ action_id: string; status: string }> {
   return apiFetch(`/agent/actions/${actionId}/reject`, { method: "POST" });
+}
+
+/** Get financial health score (0-100) with live Claude reasoning.
+ *  Cached for 2 minutes server-side. Pass forceRefresh=true to bypass cache. */
+export async function getHealthScore(
+  runId: string,
+  forceRefresh = false,
+): Promise<HealthScoreData> {
+  return apiFetch<HealthScoreData>(
+    `/runs/${runId}/health-score?refresh=${forceRefresh}`,
+  );
 }

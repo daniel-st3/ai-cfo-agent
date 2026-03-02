@@ -49,7 +49,7 @@ export function DashboardNav({
   // Track which section is in viewport
   useEffect(() => {
     const ids = [
-      "sec-kpi", "sec-agent", "sec-runway", "sec-forecast", "sec-revenue",
+      "sec-health", "sec-kpi", "sec-agent", "sec-runway", "sec-forecast", "sec-revenue",
       "sec-intel", "sec-scenarios", "sec-deepdive", "sec-customers",
       "sec-fraud", "sec-anomalies", "sec-fundraising", "sec-briefing", "sec-ai",
     ];
@@ -80,6 +80,17 @@ export function DashboardNav({
   const baseScenario = scenarios.find(s => s.scenario === "base");
 
   const sections: Section[] = [
+    {
+      id: "sec-health",
+      label: "Health",
+      icon: "💯",
+      getValue: () => "Score",
+      getSub: () => "AI assessment",
+      gradient: "from-emerald-50 to-teal-100",
+      border: "border-emerald-200",
+      ring: "ring-emerald-400",
+      text: "text-emerald-700",
+    },
     {
       id: "sec-kpi",
       label: "KPIs",
