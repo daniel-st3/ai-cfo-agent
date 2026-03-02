@@ -2,13 +2,15 @@
 
 ## Thread (post as a reply chain from tweet 1)
 
+**Note:** This is an 11-tweet thread (health score added as tweet 2)
+
 ---
 
 **Tweet 1** *(main post — attach pipeline video or dashboard screenshot)*
 
 Just launched AI CFO Agent on Product Hunt 🚀
 
-Open-source autonomous CFO that runs on your machine. Just shipped a major UI overhaul — agent activity log, compact dashboard, AI tools browser.
+Open-source autonomous CFO that runs on your machine. Live financial health score (0-100), agent activity log, compact dashboard, AI tools browser.
 
 No cloud. No signup. $3/month vs $250K/year CFO.
 
@@ -18,7 +20,23 @@ github.com/daniel-st3/ai-cfo-agent
 
 ---
 
-**Tweet 2** *(attach new dashboard screenshot)*
+**Tweet 2** *(attach health score screenshot)*
+
+Real-time Financial Health Score: 67/100 🎯
+
+See your startup's health at a glance:
+- 💯 Composite score from 5 key metrics
+- 🤖 Live AI reasoning from Claude
+- 🔄 Refreshable on-demand
+- 📊 Component breakdown (runway, burn, growth, unit econ, risk)
+
+"What's your score?" moment.
+
+[Screenshot: health score card]
+
+---
+
+**Tweet 3** *(attach new dashboard screenshot)*
 
 Major UI redesign shipped today:
 
@@ -32,7 +50,7 @@ Major UI redesign shipped today:
 
 ---
 
-**Tweet 3** *(attach agent log video/gif)*
+**Tweet 4** *(attach agent log video/gif)*
 
 The agent activity log is 🔥
 
@@ -49,7 +67,7 @@ Terminal aesthetic. Auto-scrolls. Live pulse.
 
 ---
 
-**Tweet 4**
+**Tweet 5**
 
 Why local-first?
 
@@ -63,9 +81,9 @@ For tech founders, this matters.
 
 ---
 
-**Tweet 5** *(attach features list screenshot)*
+**Tweet 6** *(attach features list screenshot)*
 
-23 features built in 40 hours:
+24 features built in 40 hours:
 
 ✅ Autonomous agent (perceive/reason/plan/execute/learn)
 ✅ Monte Carlo survival analysis
@@ -79,7 +97,7 @@ For tech founders, this matters.
 
 ---
 
-**Tweet 6**
+**Tweet 7**
 
 The autonomous agent:
 
@@ -93,7 +111,7 @@ The autonomous agent:
 
 ---
 
-**Tweet 7**
+**Tweet 8**
 
 Real scenarios it handles:
 
@@ -106,7 +124,7 @@ All with approval gates for safety.
 
 ---
 
-**Tweet 8**
+**Tweet 9**
 
 Setup in 5 commands:
 
@@ -124,7 +142,7 @@ Watch the terminal-style agent log. See results in 30 seconds.
 
 ---
 
-**Tweet 9**
+**Tweet 10**
 
 Built with:
 
@@ -139,7 +157,7 @@ MIT license. Fork it. Build on it.
 
 ---
 
-**Tweet 10** *(closing CTA)*
+**Tweet 11** *(closing CTA)*
 
 If this saves you time, star the repo ⭐
 
@@ -179,7 +197,8 @@ Demo: localhost:3000 (run locally!)
 
 ## Media to prepare
 
-1. **Video 1**: Pipeline running with agent log visible (30 sec) → Tweet 1 + 3
-2. **Screenshot 1**: Dashboard overview (compact, agent at top) → Tweet 2
-3. **Screenshot 2**: AI Intelligence Center (horizontal tab bar) → Tweet 5
-4. **GIF**: Agent log messages streaming in → Tweet 3 alternative
+1. **Video 1**: Pipeline running with agent log visible (30 sec) → Tweet 1 + 4
+2. **Screenshot 1**: Health score card (67/100, amber warning, Claude reasoning) → Tweet 2
+3. **Screenshot 2**: Dashboard overview (compact, agent at top) → Tweet 3
+4. **Screenshot 3**: AI Intelligence Center (horizontal tab bar) → Tweet 6
+5. **GIF**: Agent log messages streaming in → Tweet 4 alternative

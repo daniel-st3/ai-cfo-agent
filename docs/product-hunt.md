@@ -2,7 +2,7 @@
 
 ## Headline
 
-**Open-source AI CFO Agent with autonomous monitoring — runs locally, costs $3/month**
+**Open-source AI CFO with live health score (0-100) + autonomous monitoring — $3/month**
 
 ## Tagline
 
@@ -15,6 +15,7 @@ The first autonomous CFO that perceives your finances, reasons with AI, plans ac
 AI CFO Agent is an open-source autonomous agent that gives every startup financial intelligence for $3/month. It runs entirely on your machine — your financial data never touches a cloud server.
 
 **What it does:**
+- Real-time Financial Health Score (0-100) with live Claude reasoning — see your startup's health at a glance
 - Autonomous perceive → reason → plan → execute → learn loop (powered by Claude Haiku)
 - Monte Carlo survival analysis (1,000 simulation paths)
 - Fraud & anomaly detection (ML IsolationForest)
@@ -22,10 +23,11 @@ AI CFO Agent is an open-source autonomous agent that gives every startup financi
 - Approval gates for high-stakes decisions
 - Live agent activity log — watch the AI work in real-time
 
-**23 features. $3/month. Your data stays local.**
+**24 features. $3/month. Your data stays local.**
 
 ## Gallery Captions
 
+0. `health-score.png` — Real-time financial health score (0-100) with live Claude reasoning at top of dashboard
 1. `dashboard-overview.png` — Compact dashboard: autonomous agent at top, 7 KPI cards, runway clock
 2. `agent-section.png` — Autonomous agent with approval queue and action history
 3. `ai-center.png` — 10 AI tools in horizontal browser-style tab bar
@@ -83,7 +85,7 @@ Just shipped a major redesign:
 4. Open: localhost:3000
 5. Click "Run Demo"
 
-Watch the agent activity log as the pipeline runs. See 23 features in action. All on your machine.
+Watch the agent activity log as the pipeline runs. See 24 features in action including the live health score. All on your machine.
 
 Built in 40 hours by a masters student who believes every startup deserves a CFO.
 

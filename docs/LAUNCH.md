@@ -4,7 +4,7 @@
 
 **AI CFO Agent** is an open-source autonomous AI agent that gives every startup a 24/7 CFO for $3/month instead of $250K/year.
 
-- 23 automated financial intelligence features
+- 24 automated financial intelligence features
 - Autonomous perceive → reason → plan → execute → learn loop
 - Runs entirely on your machine — financial data never leaves
 - Powered by Claude Haiku (~$0.003/analysis cycle)
@@ -37,12 +37,13 @@
 
 ## Key Differentiators to Emphasize
 
-1. **Local-first privacy** — Financial data never touches a cloud server
-2. **Genuinely autonomous** — Claude reasons with tool_use, not just templates
-3. **Approval gates** — Safe autonomy, not reckless automation
-4. **$0.003/cycle** — 6,944x cheaper than a human CFO
-5. **Agent activity log** — Watch the AI work in real-time (terminal aesthetic)
-6. **Open source MIT** — Inspect every line, fork freely
+1. **Real-time health score** — Instant 0-100 score with live AI reasoning (no other tool has this)
+2. **Local-first privacy** — Financial data never touches a cloud server
+3. **Genuinely autonomous** — Claude reasons with tool_use, not just templates
+4. **Approval gates** — Safe autonomy, not reckless automation
+5. **$0.003/cycle** — 6,944x cheaper than a human CFO
+6. **Agent activity log** — Watch the AI work in real-time (terminal aesthetic)
+7. **Open source MIT** — Inspect every line, fork freely
 
 ---
 
@@ -59,13 +60,16 @@
 
 ## Screenshots Needed (New UI)
 
-1. **Landing page** — condensed hero + `<details>` format guide
-2. **Dashboard overview** — compact layout, agent at section 2
-3. **Autonomous Agent section** — purple bot badge, 24/7 monitoring, approval queue
-4. **AI Intelligence Center** — horizontal tab bar with 10 tools
-5. **Pipeline with Agent Log** — terminal-style activity log streaming in real-time
+1. **Landing page** — condensed hero + `<details>` format guide ✅
+2. **Health Score** — Real-time 0-100 score with Claude reasoning at top of dashboard ⚠️ NEED THIS
+3. **Dashboard overview** — compact layout, agent at section 2 ✅
+4. **Autonomous Agent section** — purple bot badge, 24/7 monitoring, approval queue ✅
+5. **AI Intelligence Center** — horizontal tab bar with 10 tools ✅
+6. **Pipeline with Agent Log** — terminal-style activity log streaming in real-time ✅
 
 Save to: `docs/screenshots/`
+
+**Priority:** Screenshot #2 (Health Score) is CRITICAL for demo video and Product Hunt gallery.
 
 ---
 
@@ -74,11 +78,13 @@ Save to: `docs/screenshots/`
 1. Open localhost:3000 — show landing page
 2. Click "Run Demo" — watch pipeline fire up
 3. Zoom into agent activity log — show IngestionAgent, KPIAgent, AnomalyAgent messages
-4. Dashboard loads — show compact layout with agent at section 2
-5. Click "Run Agent Cycle" — show autonomous agent reasoning
-6. Navigate to AI Intelligence Center — show 10 tools in horizontal tab bar
-7. Generate one report (VC Memo or CFO Report)
-8. Show Runway Explorer with interactive sliders
+4. Dashboard loads — show health score at top (67/100 with Claude reasoning)
+5. Click refresh on health score — show new reasoning generating live
+6. Scroll down — show compact layout with agent at section 2
+7. Click "Run Agent Cycle" — show autonomous agent reasoning
+8. Navigate to AI Intelligence Center — show 10 tools in horizontal tab bar
+9. Generate one report (VC Memo or CFO Report)
+10. Show Runway Explorer with interactive sliders
 
 ---
 

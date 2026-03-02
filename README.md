@@ -11,9 +11,9 @@ Drop a CSV of weekly transactions. Get board-ready financial intelligence in 30 
 
 ## Screenshots
 
-| Landing Page | Dashboard Overview |
+| Financial Health Score (0-100) | Dashboard Overview |
 |---|---|
-| ![Landing](docs/screenshots/01-landing.png) | ![Dashboard](docs/screenshots/02-dashboard-overview.png) |
+| ![Health Score](docs/screenshots/00-health-score.png) | ![Dashboard](docs/screenshots/02-dashboard-overview.png) |
 
 | Autonomous CFO Agent (section 2) | AI Intelligence Center |
 |---|---|
