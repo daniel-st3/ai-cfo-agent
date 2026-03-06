@@ -1,4 +1,4 @@
-# AI CFO Agent
+# AI CFO Agent — Financial Intelligence Platform
 
 [![GitHub stars](https://img.shields.io/github/stars/daniel-st3/ai-cfo-agent?style=social)](https://github.com/daniel-st3/ai-cfo-agent/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
